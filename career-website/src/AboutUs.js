@@ -1,21 +1,65 @@
-import React from "react";
-import { ArrowLeft, Users, BookOpen, CalendarCheck } from "lucide-react";
+import React, { useRef, useEffect } from "react";
+import { Users, BookOpen, CalendarCheck, Sparkles } from "lucide-react";
+import gsap from "gsap";
 
 const AboutUs = ({ goBack }) => {
+  const heroRef = useRef(null);
+
+  useEffect(() => {
+    if (heroRef.current) {
+      // Hero fade-in animation
+      gsap.fromTo(
+        heroRef.current,
+        { opacity: 0, y: -50 },
+        { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }
+      );
+
+      // Floating bubble animation
+      gsap.to(".floating-shape", {
+        y: "-=20",
+        repeat: -1,
+        yoyo: true,
+        duration: 2,
+        ease: "sine.inOut",
+        stagger: 0.3,
+      });
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
-     {/* Header */}
-      <header className="text-center py-16 bg-gradient-to-r from-indigo-600 to-blue-500 text-white shadow-lg">
-        <h1 className="text-4xl md:text-5xl font-extrabold mb-3">
-          🌟 About Us
-        </h1>
-        <p className="text-lg opacity-90 max-w-2xl mx-auto">
-          How we help students shape their future with the right guidance and opportunities.
-        </p>
+
+      {/* ---------------- HEADER WITH FLOATING BUBBLES ---------------- */}
+      <header
+        ref={heroRef}
+        className="relative bg-gradient-to-r from-indigo-600 to-blue-500 text-white py-20 px-6 md:px-16 overflow-hidden shadow-lg rounded-b-3xl"
+      >
+
+        {/* Floating shapes */}
+        <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
+        <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
+        <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
+        <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
+
+        {/* Content */}
+        <div className="relative z-10 text-center max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-3 flex justify-center items-center gap-3">
+            <span className="animate-bounce text-yellow-300 text-5xl">🌟</span>
+             About Us
+          </h1>
+          <p className="text-lg opacity-90">
+            How we help students shape their future with the right guidance and opportunities.
+          </p>
+        </div>
+
+        {/* Sparkle Icon */}
+        <Sparkles className="absolute top-10 right-10 w-16 h-16 text-white opacity-20 animate-spin-slow" />
       </header>
 
+      {/* ---------------- CONTENT ---------------- */}
       <main className="flex-1 p-6 md:p-12">
-        {/* Mission Section */}
+        
+        {/* Mission */}
         <div className="max-w-4xl mx-auto mb-12 text-center">
           <h2 className="text-3xl font-semibold text-blue-600 mb-4">Our Mission</h2>
           <p className="text-gray-700 text-lg leading-relaxed">
@@ -25,7 +69,7 @@ const AboutUs = ({ goBack }) => {
           </p>
         </div>
 
-        {/* Vision Section */}
+        {/* Vision */}
         <div className="max-w-4xl mx-auto mb-12 text-center">
           <h2 className="text-3xl font-semibold text-blue-600 mb-4">Our Vision</h2>
           <p className="text-gray-700 text-lg leading-relaxed">
@@ -36,8 +80,9 @@ const AboutUs = ({ goBack }) => {
           </p>
         </div>
 
-        {/* Cards Section */}
+        {/* Cards */}
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+          
           {/* Who We Are */}
           <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300">
             <div className="flex items-center mb-4">
@@ -74,6 +119,7 @@ const AboutUs = ({ goBack }) => {
               ))}
             </ul>
           </div>
+
         </div>
       </main>
 
@@ -81,6 +127,7 @@ const AboutUs = ({ goBack }) => {
       <footer className="mt-12 text-center text-gray-500 py-6 border-t border-gray-200">
         © {new Date().getFullYear()} Career Website. All rights reserved.
       </footer>
+
     </div>
   );
 };

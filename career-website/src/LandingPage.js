@@ -1,241 +1,225 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, GraduationCap, Building2, Award } from "lucide-react";
+import { BookOpen, GraduationCap, Building2, Award, Target, Compass } from "lucide-react";
 import gsap from "gsap";
-
-// ✅ Import Google Fonts in your index.css or global.css
-// @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Playfair+Display:wght@600;700&display=swap');
+import { Draggable } from "gsap/Draggable";
 
 export default function Landing() {
   const features = [
-    {
-      title: "Aptitude Test",
-      desc: "Know your strengths & skills.",
-      icon: <BookOpen className="h-10 w-10 text-blue-500" />,
-    },
-    {
-      title: "Course Mapping",
-      desc: "Find courses that fit your profile.",
-      icon: <GraduationCap className="h-10 w-10 text-green-500" />,
-    },
-    {
-      title: "Top Colleges",
-      desc: "Get details about leading institutions.",
-      icon: <Building2 className="h-10 w-10 text-indigo-500" />,
-    },
-    {
-      title: "Scholarships",
-      desc: "Discover opportunities to fund your studies.",
-      icon: <Award className="h-10 w-10 text-yellow-500" />,
-    },
+    { title: "Aptitude Test", desc: "Know your strengths & skills.", icon: <BookOpen className="h-10 w-10 text-[#8B5E34]" /> },
+    { title: "Course Mapping", desc: "Find courses that fit your profile.", icon: <GraduationCap className="h-10 w-10 text-[#8B5E34]" /> },
+    { title: "Top Colleges", desc: "Get details about leading institutions.", icon: <Building2 className="h-10 w-10 text-[#8B5E34]" /> },
+    { title: "Scholarships", desc: "Discover opportunities to fund your studies.", icon: <Award className="h-10 w-10 text-[#8B5E34]" /> },
   ];
 
-  const steps = [
-    "Take Aptitude Test",
-    "Explore Courses",
-    "Find Colleges",
-    "Eligible Scholarships", // ✅ Changed here
-  ];
+  const steps = ["Take Aptitude Test", "Explore Courses", "Find Colleges", "Eligible Scholarships"];
 
-  // GSAP Refs
-  const heroTextRef = useRef(null);
   const heroImageRef = useRef(null);
   const buttonRef = useRef(null);
+  const badgeRef = useRef(null);
+  const featureRefs = useRef([]);
+  const stepRefs = useRef([]);
 
-  const [visible, setVisible] = useState([]);
-  const refs = useRef([]);
-  refs.current = [];
-  const addToRefs = (el) => {
-    if (el && !refs.current.includes(el)) refs.current.push(el);
-  };
+  const [dragComplete, setDragComplete] = useState({});
+
+  const addFeatureRef = (el) => { if (el && !featureRefs.current.includes(el)) featureRefs.current.push(el); };
+  const addStepRef = (el) => { if (el && !stepRefs.current.includes(el)) stepRefs.current.push(el); };
 
   useLayoutEffect(() => {
+    gsap.registerPlugin(Draggable);
+
     const ctx = gsap.context(() => {
-      const letters = document.querySelectorAll(".hero-letter");
+      gsap.from(".hero-heading", { opacity: 0, y: 50, stagger: 0.15, duration: 1.2, ease: "back.out(1.7)" });
 
-      gsap.from(letters, {
-        opacity: 0,
-        y: 40,
-        stagger: 0.05,
-        duration: 0.6,
-        ease: "back.out(1.7)",
+      gsap.from(heroImageRef.current, { 
+        x: 100, opacity: 0, rotation: -5, duration: 1.5, ease: "power3.out",
+        onComplete: () => {
+          gsap.to(heroImageRef.current, { y: -20, duration: 3, repeat: -1, yoyo: true, ease: "sine.inOut" });
+        }
       });
 
-      gsap.from(heroImageRef.current, {
-        x: 80,
-        opacity: 0,
-        duration: 1.2,
-        ease: "power3.out",
+      gsap.from(buttonRef.current, { scale: 0.8, opacity: 0, duration: 0.8, delay: 0.8, ease: "elastic.out(1,0.5)" });
+
+      if (badgeRef.current) {
+        gsap.to(badgeRef.current, { rotation: 6, y: -6, duration: 3, repeat: -1, yoyo: true, ease: "sine.inOut" });
+      }
+
+      featureRefs.current.forEach((el, i) => {
+        gsap.fromTo(
+          el,
+          { opacity: 0, y: 40, scale: 0.8, rotationX: -20, filter: "blur(8px)" },
+          { opacity: 1, y: 0, scale: 1, rotationX: 0, filter: "blur(0px)", duration: 1.2, delay: i * 0.25, ease: "back.out(1.5)" }
+        );
       });
 
-      gsap.from(buttonRef.current, {
-        scale: 0.8,
-        opacity: 0,
-        duration: 1,
-        delay: 0.6,
-        ease: "elastic.out(1,0.6)",
+      stepRefs.current.forEach((el, i) => {
+        gsap.fromTo(
+          el,
+          { opacity: 0, scale: 0.6, y: 50, rotationY: -90 },
+          { opacity: 1, scale: 1, y: 0, rotationY: 0, duration: 1, delay: i * 0.2, ease: "back.out(1.7)" }
+        );
       });
     });
-
-    // Intersection observer for features & steps
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setVisible((v) => [...v, entry.target.dataset.index]);
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.2 }
-    );
-    refs.current.forEach((ref) => observer.observe(ref));
 
     return () => ctx.revert();
   }, []);
 
-  // Split heading into letters
-  const renderAnimatedText = (text, gradient = false) =>
-    text.split("").map((char, i) => (
-      <span
-        key={i}
-        className={`hero-letter inline-block ${
-          gradient
-            ? "bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
-            : "text-gray-900"
-        }`}
-      >
-        {char === " " ? "\u00A0" : char}
-      </span>
-    ));
+  useEffect(() => {
+    featureRefs.current.forEach((el, i) => {
+      Draggable.create(el, {
+        type: "x,y",
+        edgeResistance: 0.65,
+        bounds: { top: -100, left: -100, width: window.innerWidth, height: window.innerHeight },
+        inertia: true,
+        onDragEnd: function () {
+          gsap.to(el, {
+            x: 0, y: 0, duration: 0.5, ease: "back.out(1.5)",
+            onComplete: () => {
+              if (!dragComplete[i]) setDragComplete(prev => ({ ...prev, [i]: true }));
+            }
+          });
+        }
+      });
+    });
+
+    return () => featureRefs.current.forEach(el => { const d = Draggable.get(el); if (d) d.kill(); });
+  }, [dragComplete]);
 
   return (
-    <div className="font-['Poppins'] relative overflow-hidden bg-gray-50 min-h-screen">
-      {/* Hero Section */}
-      <section className="relative flex flex-col md:flex-row items-center justify-between px-6 md:px-14 py-16 gap-10 bg-gradient-to-r from-blue-50/70 to-indigo-100/70 rounded-b-3xl shadow-lg">
-        {/* Left Content */}
-        <div className="md:w-1/2 space-y-6 z-10 text-center md:text-left">
-          <h1 className="leading-tight">
-            <span className="font-['Poppins'] text-4xl md:text-5xl font-extrabold text-gray-900">
-              {renderAnimatedText("Unlock Your ", true)}
-            </span>
-            <br />
-            <span className="font-['Playfair_Display'] text-3xl md:text-4xl font-semibold text-indigo-800 italic">
-              {renderAnimatedText("Future With Confidence")}
-            </span>
-          </h1>
+    <div className="pen-cursor-root font-['Poppins'] relative overflow-hidden bg-[#E0D3C3] min-h-screen text-gray-900">
 
-          <p
-            ref={heroTextRef}
-            className="text-lg md:text-xl text-gray-700 mt-4 font-['Poppins']"
-          >
-            Explore your strengths, match with the right courses, and step into
-            top colleges with clarity.
-          </p>
-          <div
-            ref={buttonRef}
-            className="flex justify-center md:justify-start space-x-4 mt-6"
-          >
+      {/* HERO */} 
+<section className="relative flex flex-col md:flex-row items-center justify-between px-6 md:px-20 py-20 gap-10 z-10">
+  
+  {/* LEFT */}
+  <div className="md:w-1/2 space-y-6 text-center md:text-left z-10">
+
+    <div
+      ref={badgeRef}
+      className="inline-block bg-gradient-to-r from-[#8B5E34] to-[#A47148] text-white px-4 py-2 rounded-full text-sm font-semibold mb-4 animate-bounce"
+    >
+      <Compass className="inline w-4 h-4 mr-1" /> Your Journey Starts Here
+    </div>
+
+    <h1 className="hero-heading text-5xl md:text-6xl font-extrabold text-[#8B5E34]">
+      Unlock Your Future
+    </h1>
+
+    <h2 className="hero-heading text-3xl md:text-4xl font-semibold italic text-[#A47148] mt-2">
+      With Confidence
+    </h2>
+
+    <p className="mt-4 md:text-lg text-[#8B5E34] leading-relaxed">
+      Explore your strengths, match with the right courses, and step into top colleges with clarity.
+    </p>
+
+
+          {/* BUTTONS */}
+          <div className="flex justify-center md:justify-start space-x-4 mt-8 flex-wrap gap-4" ref={buttonRef}>
             <Link
-              to="/signup"
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition font-['Poppins']"
+              to="/aptitude-landing"
+              className="px-8 py-3 bg-gradient-to-r from-[#8B5E34] to-[#A47148] hover:scale-110 text-white rounded-xl shadow-lg font-semibold flex items-center gap-2"
             >
-              Get Started
+              <Target className="w-5 h-5" /> 🚀 Take the Quiz
             </Link>
+
             <Link
               to="/signin"
-              className="px-6 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-['Poppins']"
+              className="px-8 py-3 border-2 border-[#8B5E34] text-[#8B5E34] rounded-xl hover:bg-[#F7ECDF] transition font-semibold"
             >
               Sign In
             </Link>
           </div>
         </div>
 
-        {/* Right Hero Image */}
+        {/* RIGHT IMAGE */}
         <div className="md:w-1/2 relative z-10">
           <img
             ref={heroImageRef}
             src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80"
             alt="Career Growth"
-            className="rounded-3xl shadow-xl w-full h-auto object-cover"
+            className="rounded-3xl shadow-2xl w-full h-auto object-cover border-4 border-[#8B5E34]"
           />
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 px-6 md:px-14">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 text-gray-900 font-['Playfair_Display']">
-          Our Features
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* FEATURES — now bg-[#EEDDC7] */}
+      <section className="py-20 px-6 md:px-20 bg-[#EEDDC7]">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-[#8B5E34] mb-2">Our Features</h2>
+          <p className="text-gray-700">Drag the cards to interact with them! ✨</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, i) => (
             <div
               key={i}
-              ref={addToRefs}
-              data-index={i}
-              className={`backdrop-blur-md bg-white/50 rounded-3xl p-6 shadow-md transform transition duration-700 hover:scale-105 hover:shadow-xl opacity-0 ${
-                visible.includes(i.toString())
-                  ? "opacity-100 translate-y-0"
-                  : "translate-y-10"
-              }`}
+              ref={addFeatureRef}
+              className="p-6 rounded-3xl bg-[#F7ECDF]/80 backdrop-blur-xl border border-[#C9B8A2] shadow-xl hover:shadow-2xl"
             >
-              <div className="mb-3 flex justify-center">{feature.icon}</div>
-              <h3 className="text-lg font-semibold mb-1 text-gray-900 text-center font-['Poppins']">
-                {feature.title}
-              </h3>
-              <p className="text-gray-700 text-center text-sm font-['Poppins']">
-                {feature.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
+              <div className="mb-4 flex justify-center text-4xl">{feature.icon}</div>
 
-      {/* Steps Section */}
-      <section className="py-16 px-6 md:px-14 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 text-gray-900 font-['Playfair_Display']">
-          How It Works
-        </h2>
-        <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-          {steps.map((step, i) => (
-            <div
-              key={i}
-              ref={addToRefs}
-              data-index={i + features.length}
-              className={`flex flex-col items-center text-center p-6 bg-white rounded-3xl shadow-md transition transform hover:-translate-y-2 opacity-0 ${
-                visible.includes((i + features.length).toString())
-                  ? "opacity-100 translate-y-0"
-                  : "translate-y-10"
-              }`}
-            >
-              <div className="w-14 h-14 flex items-center justify-center bg-blue-600 text-white rounded-full font-bold text-lg mb-2 animate-bounce font-['Poppins']">
-                {i + 1}
+              <h3 className="text-lg font-bold mb-2 text-center text-gray-900">{feature.title}</h3>
+
+              <p className="text-gray-800 text-center text-sm leading-relaxed">{feature.desc}</p>
+
+              <div className="mt-4 flex justify-center">
+                <span
+                  className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                    dragComplete[i]
+                      ? "bg-green-500/30 text-green-800"
+                      : "bg-[#8B5E34]/20 text-[#8B5E34]"
+                  }`}
+                >
+                  {dragComplete[i] ? "✓ Unlocked" : "Drag me"}
+                </span>
               </div>
-              <p className="text-gray-700 font-medium text-sm font-['Poppins']">
-                {step}
-              </p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 px-6 md:px-14 text-center bg-gradient-to-r from-blue-100 to-indigo-100 text-gray-900 rounded-t-3xl">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4 font-['Playfair_Display']">
-          Start Your Career Journey Today
-        </h2>
-        <Link
-          className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition font-['Poppins']"
-          to="/signup"
-        >
-          Join Now
-        </Link>
-      </section>
+      {/* HOW IT WORKS */}
+<section className="py-20 px-6 md:px-20">
+  <h2 className="text-4xl font-bold text-center mb-12 text-[#8B5E34]">How It Works</h2>
 
-      {/* Footer */}
-      <footer className="bg-gray-100 text-gray-600 py-6 text-center border-t border-gray-200 font-['Poppins']">
-        &copy; 2025 Career Website. All rights reserved.
-      </footer>
+  <div className="flex flex-col md:flex-row items-center justify-center gap-6 flex-wrap">
+    {steps.map((step, i) => (
+      <div key={i} className="flex items-center gap-6 w-full md:w-auto">
+
+        <div
+          ref={addStepRef}
+          className="flex flex-col items-center p-8 bg-[#F7ECDF] rounded-3xl shadow-lg hover:-translate-y-2 transition border border-[#C9B8A2] min-w-[220px]"
+        >
+          <div className="w-16 h-16 flex items-center justify-center bg-gradient-to-r from-[#8B5E34] to-[#A47148] text-white rounded-full font-bold text-xl mb-3 shadow-lg">
+            {i + 1}
+          </div>
+          <p className="text-[#8B5E34] font-semibold">{step}</p>
+        </div>
+
+        {i < steps.length - 1 && (
+          <div className="hidden md:block w-12 h-1 bg-[#8B5E34] rounded-full"></div>
+        )}
+      </div>
+    ))}
+  </div>
+</section>
+
+      {/* CTA — background same as Features */}
+<section className="py-24 px-6 md:px-20 text-center bg-[#EEDDC7]">
+  <div className="max-w-2xl mx-auto space-y-6">
+    <h2 className="text-4xl font-extrabold text-[#8B5E34]">Ready to discover your path?</h2>
+    <p className="text-gray-800 text-lg">Take the first step towards your bright future with our interactive tools.</p>
+
+    <Link
+      to="/aptitude-landing"
+      className="inline-block px-10 py-4 bg-gradient-to-r from-[#8B5E34] to-[#A47148] text-white font-bold rounded-3xl shadow-lg transform hover:scale-105"
+    >
+      Start Now 🚀
+    </Link>
+  </div>
+</section>
+
     </div>
   );
 }

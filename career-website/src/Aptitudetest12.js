@@ -1,35 +1,36 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const AptitudeTest = () => {
-  const [questionTree, setQuestionTree] = useState(null);
-  const [currentNode, setCurrentNode] = useState(null);
+  // Local dummy question tree (replaces backend)
+  const sampleQuestionTree = {
+    Question1: "Do you enjoy problem solving?",
+    Options: {
+      Yes: {
+        Question2: "Do you like working with numbers?",
+        Options: {
+          Yes: "Consider Engineering",
+          No: "Consider Computer Science",
+        },
+      },
+      No: {
+        Question2: "Do you prefer reading and analysis?",
+        Options: {
+          Yes: "Consider Humanities",
+          No: "Consider Vocational Courses",
+        },
+      },
+    },
+  };
+
+  const [questionTree, setQuestionTree] = useState(sampleQuestionTree);
+  const [currentNode, setCurrentNode] = useState(sampleQuestionTree);
   const [answerTimes, setAnswerTimes] = useState([]);
-  const [totalStartTime, setTotalStartTime] = useState(null);
-  const [questionStart, setQuestionStart] = useState(null);
+  const [totalStartTime, setTotalStartTime] = useState(Date.now());
+  const [questionStart, setQuestionStart] = useState(Date.now());
   const [finalRecommendation, setFinalRecommendation] = useState(null);
 
   const navigate = useNavigate();
-  const user_id = localStorage.getItem("user_id");
-  const stream = localStorage.getItem("stream");
-
-  // Fetch questions from backend
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        const res = await fetch(`http://localhost:8000/questions/12/${stream}`);
-        const data = await res.json();
-        const tree = data.question_bank[0].question_tree;
-        setQuestionTree(tree);
-        setCurrentNode(tree);
-        setTotalStartTime(Date.now());
-        setQuestionStart(Date.now());
-      } catch (err) {
-        console.error("❌ Failed to fetch questions:", err);
-      }
-    };
-    fetchQuestions();
-  }, []);
 
   const handleChoice = (option) => {
     const endTime = Date.now();
@@ -57,28 +58,9 @@ const AptitudeTest = () => {
     return <div className="p-8 text-lg">⏳ Loading questionnaire...</div>;
   }
 
-  if(finalRecommendation){
-    // Send to FastAPI backend
-    console.log("🚀 Sending final recommendation to backend:", finalRecommendation);
-fetch(`http://localhost:8000/submit/12/${user_id}`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify(finalRecommendation)
-})
-  .then(response => {
-    if (!response.ok) {
-      throw new Error("Failed to submit recommendation");
-    }
-    return response.json();
-  })
-  .then(data => {
-    console.log("✅ Sent to backend successfully:", data);
-  })
-  .catch(error => {
-    console.error("❌ Error sending to backend:", error);
-  });
+  if (finalRecommendation) {
+    // No backend: simply log the recommendation and allow user to continue
+    console.log("Local final recommendation:", finalRecommendation);
   }
   
   if (finalRecommendation) {

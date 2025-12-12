@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function ProfileSetup12th() {
   const navigate = useNavigate();
-  const userId = localStorage.getItem("user_id"); // Must be saved during signup/login
+  const userId = localStorage.getItem("user_id");
 
   const allSubjects = [
     "English", "Physics", "Chemistry", "Mathematics", "Biology",
@@ -54,78 +54,38 @@ export default function ProfileSetup12th() {
     setSelectedSubjects(updated);
   };
 
-  const handleFinish = async (e) => {
+  const handleFinish = (e) => {
     e.preventDefault();
 
-    if (!userId) return alert("User ID not found. Please login again.");
     if (!form.medium) return alert("Please select a medium of study.");
     if (!form.compulsoryLanguage) return alert("Please select a compulsory language.");
     if (!form.interests) return alert("Please select your interest subject.");
     if (!form.ambition) return alert("Please select your ambition.");
     if (!form.stream) return alert("Please select your stream.");
-    
-
-    
 
     for (const subj of selectedSubjects) {
       if (!subj.marks) return alert(`Please enter marks for ${subj.name}`);
     }
 
-    const finalAmbition = form.ambition === "Others" ? form.otherAmbition : form.ambition;
+    const mathsMarks = selectedSubjects.find(s => s.name === "Mathematics")?.marks || 0;
+    const physicsMarks = selectedSubjects.find(s => s.name === "Physics")?.marks || 0;
+    const chemistryMarks = selectedSubjects.find(s => s.name === "Chemistry")?.marks || 0;
 
-    // Get marks for Maths, Physics, Chemistry
-const mathsMarks = selectedSubjects.find(s => s.name === "Mathematics")?.marks || 0;
-const physicsMarks = selectedSubjects.find(s => s.name === "Physics")?.marks || 0;
-const chemistryMarks = selectedSubjects.find(s => s.name === "Chemistry")?.marks || 0;
+    const calculatedCutoff = Number(mathsMarks) + Number(physicsMarks) + Number(chemistryMarks);
 
-// Calculate cutoff as sum
-const calculatedCutoff = Number(mathsMarks) + Number(physicsMarks) + Number(chemistryMarks);
-localStorage.setItem("stream", form.stream);
-// Update form.cutoff
-setForm(prev => ({ ...prev, cutoff: calculatedCutoff }));
+    setForm(prev => ({ ...prev, cutoff: calculatedCutoff }));
+    localStorage.setItem("stream", form.stream);
 
+    alert("Form validation complete! No backend used.");
 
-    const dataToSave = {
-      medium: form.medium,
-      compulsoryLanguage: form.compulsoryLanguage,
-      stream: form.stream, 
-      selectedSubjects: selectedSubjects.map((s) => s.name),
-      marks: selectedSubjects.reduce((acc, s) => {
-        acc[s.name] = Number(s.marks);
-        return acc;
-      }, {}),
-      my_interest: [form.interests],
-      ambition: finalAmbition,
-      jeerank: form.jeerank,
-      neetrank: form.neetrank,
-      cutoff: form.cutoff
-    };
-    console.log(dataToSave);
-    try {
-      const response = await fetch(`http://localhost:8000/profile-12th/${userId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dataToSave),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        alert("Profile saved successfully!");
-        navigate("/aptitude-landing", { state: { qualification: "12" } });
-      } else {
-        alert("Error saving profile: " + JSON.stringify(result));
-      }
-    } catch (error) {
-      console.error("Failed to submit form:", error);
-      alert("Failed to connect to the server. Please try again later.");
-    }
+    navigate("/aptitude-landing", { state: { qualification: "12" } });
   };
 
   return (
     <div className="max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-8">
       <h1 className="text-2xl font-bold mb-6">Profile Setup – 12th Details</h1>
       <form onSubmit={handleFinish}>
+
         {/* Medium */}
         <label className="block mb-1 font-semibold">
           Medium of Study <span className="text-red-500">*</span>
@@ -162,23 +122,20 @@ setForm(prev => ({ ...prev, cutoff: calculatedCutoff }));
         </select>
 
         {/* Stream */}
-<label className="block mb-1 font-semibold">
-  Stream <span className="text-red-500">*</span>
-</label>
-<select
-  name="stream"
-  value={form.stream}
-  onChange={handleChange}
-  className="w-full border rounded-lg p-2 mb-6"
->
-  <option value="">Select Stream</option>
-  {streamOptions.map((option) => (
-    <option key={option} value={option}>
-      {option}
-    </option>
-  ))}
-</select>
-
+        <label className="block mb-1 font-semibold">
+          Stream <span className="text-red-500">*</span>
+        </label>
+        <select
+          name="stream"
+          value={form.stream}
+          onChange={handleChange}
+          className="w-full border rounded-lg p-2 mb-6"
+        >
+          <option value="">Select Stream</option>
+          {streamOptions.map((option) => (
+            <option key={option}>{option}</option>
+          ))}
+        </select>
 
         {/* Optional Subjects */}
         <h2 className="font-semibold mb-2">Select Your Optional Subjects</h2>
@@ -230,7 +187,6 @@ setForm(prev => ({ ...prev, cutoff: calculatedCutoff }));
           value={form.jeerank}
           onChange={handleChange}
           className="w-full border rounded-lg p-2 mb-6"
-          placeholder="Enter JEE Rank"
         />
 
         {/* NEET Rank */}
@@ -241,10 +197,9 @@ setForm(prev => ({ ...prev, cutoff: calculatedCutoff }));
           value={form.neetrank}
           onChange={handleChange}
           className="w-full border rounded-lg p-2 mb-6"
-          placeholder="Enter NEET Rank"
         />
 
-        {/* Cutoff (calculated automatically) */}
+        {/* Cutoff */}
         <label className="block mb-1 font-semibold">
           Cutoff (Maths + Physics + Chemistry)
         </label>
@@ -255,7 +210,6 @@ setForm(prev => ({ ...prev, cutoff: calculatedCutoff }));
           readOnly
           className="w-full border rounded-lg p-2 mb-6 bg-gray-100"
         />
-
 
         {/* Interests */}
         <label className="block mb-1 font-semibold">
@@ -269,9 +223,7 @@ setForm(prev => ({ ...prev, cutoff: calculatedCutoff }));
         >
           <option value="">Select your Interest Subject</option>
           {interestSubjects.map((subj) => (
-            <option key={subj} value={subj}>
-              {subj}
-            </option>
+            <option key={subj}>{subj}</option>
           ))}
         </select>
 
@@ -287,9 +239,7 @@ setForm(prev => ({ ...prev, cutoff: calculatedCutoff }));
         >
           <option value="">Select your Ambition</option>
           {ambitionOptions.map((amb) => (
-            <option key={amb} value={amb}>
-              {amb}
-            </option>
+            <option key={amb}>{amb}</option>
           ))}
         </select>
 
@@ -299,7 +249,6 @@ setForm(prev => ({ ...prev, cutoff: calculatedCutoff }));
             name="otherAmbition"
             value={form.otherAmbition}
             onChange={handleChange}
-            placeholder="Please specify your ambition"
             className="w-full border rounded-lg p-2 mb-6"
           />
         )}
@@ -308,7 +257,7 @@ setForm(prev => ({ ...prev, cutoff: calculatedCutoff }));
           type="submit"
           className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
-          Save & Continue
+          Save & Continue (No Backend)
         </button>
       </form>
     </div>

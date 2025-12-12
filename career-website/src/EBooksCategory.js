@@ -1,17 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 
+const booksData = [
+  {
+    id: "1",
+    title: "Learn Java",
+    description: "A complete Java guide for beginners.",
+    data: "/ebooks/java.pdf"   // put your file inside public/ebooks/
+  },
+  {
+    id: "2",
+    title: "Python Basics",
+    description: "Start learning Python with simple examples.",
+    data: "/ebooks/python.pdf"
+  }
+  // Add more books here
+];
+
 export default function EBooksCategory() {
   const { id } = useParams();
-  const [book, setBook] = useState(null);
-
-  useEffect(() => {
-    fetch(`http://localhost:8000/resources/${id}`)
-      .then((res) => res.json())
-      .then((data) => setBook(data))
-      .catch((err) => console.error("Error fetching book details:", err));
-  }, [id]);
+  const book = booksData.find((b) => b.id === id);
 
   const pageVariants = {
     initial: { opacity: 0, x: 50 },
@@ -27,7 +36,11 @@ export default function EBooksCategory() {
   };
 
   if (!book) {
-    return <p className="p-8 text-lg text-gray-500">Loading book details...</p>;
+    return (
+      <p className="p-8 text-lg text-red-500">
+        ❌ Book not found.
+      </p>
+    );
   }
 
   return (
@@ -39,19 +52,18 @@ export default function EBooksCategory() {
       variants={pageVariants}
       transition={pageTransition}
     >
-      {/* Book Title */}
-      <h1 className="text-3xl font-bold mb-6 text-blue-700">📖 {book.title}</h1>
+      <h1 className="text-3xl font-bold mb-6 text-blue-700">
+        📖 {book.title}
+      </h1>
 
-      {/* Book Description */}
       {book.description && (
         <p className="mb-6 text-gray-700">
           <span className="font-semibold">Description:</span> {book.description}
         </p>
       )}
 
-      {/* Open Book Button */}
       <a
-        href={book.data} // make sure this is a full URL
+        href={book.data}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-block px-6 py-3 bg-gradient-to-r from-green-600 to-green-400 text-white font-semibold rounded-lg shadow hover:from-green-700 hover:to-green-500 transition"
@@ -61,4 +73,3 @@ export default function EBooksCategory() {
     </motion.div>
   );
 }
-

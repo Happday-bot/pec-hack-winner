@@ -53,37 +53,75 @@ const AptitudeTest10 = () => {
 
   // --- Fetch quiz data on mount ---
   useEffect(() => {
-    const fetchQuiz = async () => {
-      try {
-        const res = await fetch("http://localhost:8000/questions/10");
-        const data = await res.json();
-        const { question_bank } = data;
-        const { question_bank: qb, control_bank: cb } = question_bank[0];
+    // Local dummy quiz data (replaces backend)
+    const qb = [
+      {
+        id: "q1",
+        question: "I enjoy solving puzzles and logical problems.",
+        options: [
+          { text: "Strongly Agree", category: "Logic" },
+          { text: "Agree", category: "Logic" },
+          { text: "Neutral", category: "Other" },
+          { text: "Disagree", category: "Other" },
+        ],
+      },
+      {
+        id: "q2",
+        question: "I like working with numbers and patterns.",
+        options: [
+          { text: "Strongly Agree", category: "Numeric" },
+          { text: "Agree", category: "Numeric" },
+          { text: "Neutral", category: "Other" },
+          { text: "Disagree", category: "Other" },
+        ],
+      },
+      {
+        id: "q3",
+        question: "I prefer reading and writing over hands-on activities.",
+        options: [
+          { text: "Strongly Agree", category: "Verbal" },
+          { text: "Agree", category: "Verbal" },
+          { text: "Neutral", category: "Other" },
+          { text: "Disagree", category: "Other" },
+        ],
+      },
+    ];
 
-        // Derive domains
-        const domainSet = new Set();
-        [...qb, ...cb].forEach((q) =>
-          q.options.forEach((opt) => domainSet.add(opt.category))
-        );
+    // control bank (pairs that should be consistent)
+    const cb = [
+      {
+        id: "c1",
+        question: "I enjoy solving puzzles and logical problems.",
+        options: [
+          { text: "Strongly Agree", category: "Logic" },
+          { text: "Agree", category: "Logic" },
+        ],
+      },
+      {
+        id: "c2",
+        question: "I enjoy solving puzzles and logical problems. (control)",
+        options: [
+          { text: "Strongly Agree", category: "Logic" },
+          { text: "Agree", category: "Logic" },
+        ],
+      },
+    ];
 
-        const initialScores = {};
-        domainSet.forEach((d) => (initialScores[d] = 0));
+    const domainSet = new Set();
+    [...qb, ...cb].forEach((q) => q.options.forEach((opt) => domainSet.add(opt.category)));
 
-        const [shuffledQuestions, cPairs] = insertControlsRandomly(qb, cb);
+    const initialScores = {};
+    domainSet.forEach((d) => (initialScores[d] = 0));
 
-        setQuestions(shuffledQuestions);
-        setControlPairs(cPairs);
-        setScores(initialScores);
-      } catch (err) {
-        console.error("❌ Error loading quiz:", err);
-      }
-    };
+    const [shuffledQuestions, cPairs] = insertControlsRandomly(qb, cb);
 
-    fetchQuiz();
+    setQuestions(shuffledQuestions);
+    setControlPairs(cPairs);
+    setScores(initialScores);
   }, []);
 
   const currentQuestion = questions[currentIndex];
-  const user_id = localStorage.getItem("user_id");
+  // backend removed; no user_id needed
   // --- Handlers ---
   const handleAnswer = (option) => {
     const elapsed = (Date.now() - startTime) / 1000;
@@ -157,20 +195,12 @@ const AptitudeTest10 = () => {
     };
   };
 
- const handleGoToDashboard = async () => {
+const handleGoToDashboard = () => {
   if (!finalResults) return;
 
   if (finalResults.reliability > 45) {
-    try {
-      await fetch(`http://localhost:8000/submit-results/10/${user_id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(finalResults),
-      });
-      navigate("/courses");
-    } catch (err) {
-      console.error("❌ Failed to send results:", err);
-    }
+    // No backend: just navigate to courses
+    navigate("/courses");
   } else {
     alert("Your answers were not reliable enough. Please retake the quiz.");
     navigate("/aptitude-test");

@@ -1,13 +1,64 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import gsap from "gsap";
 
 const TimelineTracker = () => {
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const heroRef = useRef(null);
+
+  // Floating + Fade-in Hero Animation
+  useEffect(() => {
+    if (heroRef.current) {
+      // Hero fade in
+      gsap.fromTo(
+        heroRef.current,
+        { opacity: 0, y: -50 },
+        { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }
+      );
+
+      // Floating bubbles
+      gsap.to(".floating-shape", {
+        y: "-=20",
+        repeat: -1,
+        yoyo: true,
+        duration: 2,
+        ease: "sine.inOut",
+        stagger: 0.3,
+      });
+    }
+  }, []);
+
+  // -----------------------------
+  // Existing Timeline Tracker Code
+  // -----------------------------
+  const sampleEvents = [
+    {
+      _id: "1",
+      title: "Sample Exam",
+      date: "2025-12-15T09:00:00Z",
+      event_type: "Exam",
+      source_name: "School",
+    },
+    {
+      _id: "2",
+      title: "Scholarship Deadline",
+      date: "2025-12-20T23:59:00Z",
+      event_type: "Deadline",
+      source_name: "Scholarship Board",
+    },
+  ];
+
+  const [upcomingEvents, setUpcomingEvents] = useState(
+    sampleEvents.map((event) => {
+      const dateObj = new Date(event.date);
+      const dateKey = `${dateObj.getFullYear()}-${String(
+        dateObj.getMonth() + 1
+      ).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
+      return { ...event, dateKey };
+    })
+  );
+
   const [hoveredDate, setHoveredDate] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // All 12 months
   const months = [
     { name: "January", month: 0 },
     { name: "February", month: 1 },
@@ -25,44 +76,8 @@ const TimelineTracker = () => {
 
   const today = new Date();
   const [currentMonthIndex, setCurrentMonthIndex] = useState(today.getMonth());
-
   const currentMonth = months[currentMonthIndex];
 
-  // Fetch events from backend
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const res = await fetch("http://localhost:8000/notification");
-        if (!res.ok) throw new Error("Failed to fetch events");
-        const data = await res.json();
-
-        const formattedEvents = data.map((event) => {
-          const dateObj = new Date(event.date);
-          const dateKey = `${dateObj.getFullYear()}-${String(
-            dateObj.getMonth() + 1
-          ).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
-          return { ...event, dateKey };
-        });
-
-        formattedEvents.sort(
-          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-        );
-
-        setUpcomingEvents(formattedEvents);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
-  }, []);
-
-  if (loading) return <div className="text-center py-20">Loading...</div>;
-  if (error) return <div className="text-center py-20 text-red-500">{error}</div>;
-
-  // Calendar logic
   const getCalendarDays = (year, month) => {
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -119,24 +134,36 @@ const TimelineTracker = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      {/* Header Banner */}
-      <header className="text-center py-16 bg-gradient-to-r from-indigo-600 to-blue-500 text-white shadow-lg">
-        <div className="max-w-5xl mx-auto">
+
+      {/* ⭐⭐⭐ BLUE HEADER WITH FLOATING SHAPES ⭐⭐⭐ */}
+      <section
+        ref={heroRef}
+        className="relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-20 px-6 md:px-16 rounded-b-3xl overflow-hidden shadow-lg"
+      >
+        {/* Floating shapes */}
+        <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
+        <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
+        <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
+        <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
+
+        {/* Content */}
+        <div className="relative z-10 max-w-3xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-3 flex justify-center items-center gap-3">
-            <span className="animate-bounce inline-block">📅</span>
+            <span className="animate-bounce text-yellow-300 text-5xl">📅</span>
             Timeline Tracker
           </h1>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto mt-3">
+          <p className="text-lg opacity-90 max-w-2xl mx-auto">
             Stay on top of your events and deadlines with an interactive timeline.
           </p>
         </div>
-      </header>
+      </section>
 
+      {/* BODY */}
       <div className="flex flex-1 p-8 gap-6">
         {/* Calendar Section */}
         <main className="flex-1">
           <div className="bg-gradient-to-r from-sky-200 to-blue-400 rounded-2xl p-8 shadow flex flex-col">
-            {/* Month selector inside calendar */}
+            {/* Month selector */}
             <div className="flex justify-center mb-6 gap-3 flex-wrap">
               {months.map((m, i) => (
                 <button
@@ -157,7 +184,7 @@ const TimelineTracker = () => {
               ))}
             </div>
 
-            {/* Calendar grid */}
+            {/* Calendar Grid */}
             <div
               style={{
                 display: "grid",
@@ -168,13 +195,11 @@ const TimelineTracker = () => {
                 minHeight: "400px",
               }}
             >
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                (name) => (
-                  <div key={name} style={{ fontWeight: "700", opacity: 0.8 }}>
-                    {name}
-                  </div>
-                )
-              )}
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((name) => (
+                <div key={name} style={{ fontWeight: "700", opacity: 0.8 }}>
+                  {name}
+                </div>
+              ))}
 
               {days.map((d, i) => {
                 const key = dateKey(d.day, d.isCurrent);
@@ -216,9 +241,11 @@ const TimelineTracker = () => {
           </div>
         </main>
 
-        {/* Sidebar - Upcoming Events */}
+        {/* Sidebar */}
         <aside className="w-80 bg-white rounded-xl shadow p-5 border border-gray-200">
-          <h2 className="text-lg font-bold text-blue-900 mb-4">📌 Upcoming Events</h2>
+          <h2 className="text-lg font-bold text-blue-900 mb-4">
+            📌 Upcoming Events
+          </h2>
           <div className="space-y-4">
             {upcomingEvents.map((event) => (
               <div

@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function ProfileSetup10th() {
   const navigate = useNavigate();
-  console.log("localStorage");
-  const userId = localStorage.getItem("userId"); // Must be saved during signup/login
+  const userId = localStorage.getItem("userId"); // Must match your login code
 
   const [form, setForm] = useState({
     medium: "",
@@ -29,6 +28,7 @@ export default function ProfileSetup10th() {
       "Economics, Disaster Management and Road Safety Education",
       "Science",
     ]);
+
     setAdditionalSubjects([
       "Computer Science",
       "Sanskrit",
@@ -41,6 +41,7 @@ export default function ProfileSetup10th() {
       "Urudu",
       "Hindi",
     ]);
+
     setInterestSubjects([
       "Science",
       "Mathematics",
@@ -50,6 +51,7 @@ export default function ProfileSetup10th() {
       "Arts",
       "Commerce",
     ]);
+
     setAmbitionOptions([
       "Doctor",
       "Engineer",
@@ -64,10 +66,7 @@ export default function ProfileSetup10th() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "interest" && /\s/.test(value)) {
-      alert(`Please enter only one word for ${name}.`);
-      return;
-    }
+
     setForm({ ...form, [name]: value });
   };
 
@@ -75,21 +74,30 @@ export default function ProfileSetup10th() {
     const updated = form.selectedSubjects.includes(subject)
       ? form.selectedSubjects.filter((s) => s !== subject)
       : [...form.selectedSubjects, subject];
+
     setForm({ ...form, selectedSubjects: updated });
   };
 
   const handleMarksChange = (subject, value) => {
-    setForm({ ...form, marks: { ...form.marks, [subject]: value } });
+    setForm((prev) => ({
+      ...prev,
+      marks: { ...prev.marks, [subject]: value },
+    }));
   };
 
-  const handleFinish = async (e) => {
+  const handleFinish = (e) => {
     e.preventDefault();
 
-    if (!userId) return alert("User ID not found. Please login again.");
     if (!form.medium) return alert("Please select a medium of study.");
-    if (!form.compulsoryLanguage) return alert("Please select a compulsory language.");
+    if (!form.compulsoryLanguage)
+      return alert("Please select a compulsory language.");
 
-    const allSubjects = [form.compulsoryLanguage, ...compulsorySubjects, ...form.selectedSubjects];
+    const allSubjects = [
+      form.compulsoryLanguage,
+      ...compulsorySubjects,
+      ...form.selectedSubjects,
+    ].filter((s) => s); // Removes empty values
+
     for (const subj of allSubjects) {
       if (!form.marks[subj]) return alert(`Please enter marks for ${subj}.`);
     }
@@ -97,46 +105,42 @@ export default function ProfileSetup10th() {
     if (!form.interest) return alert("Please select your interest subject.");
     if (!form.ambition) return alert("Please select your ambition.");
 
-    const finalAmbition = form.ambition === "Others" ? form.otherAmbition : form.ambition;
-    if (form.ambition === "Others" && !form.otherAmbition) return alert("Please enter your ambition.");
+    if (form.ambition === "Others" && !form.otherAmbition)
+      return alert("Please enter your ambition.");
+
+    const finalAmbition =
+      form.ambition === "Others" ? form.otherAmbition : form.ambition;
 
     const profileData = { ...form, ambition: finalAmbition };
     delete profileData.otherAmbition;
 
-    try {
-      const response = await fetch(`http://localhost:8000/profile-10th/${userId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profileData),
-      });
-
-      const data = await response.json();
-      console.log("Backend Response:", data);
-
-      if (response.ok) {
-        alert("✅ Profile details saved successfully!");
-        navigate("/aptitude-landing", { state: { qualification: "10" } });
-      } else {
-        alert("❌ Error saving profile: " + JSON.stringify(data));
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("❌ Failed to save profile. Try again.");
-    }
+    // No backend: just log locally and navigate
+    console.log("Profile saved locally:", profileData);
+    alert("✅ Profile details saved successfully!");
+    navigate("/aptitude-landing", { state: { qualification: "10" } });
   };
 
   return (
     <div className="space-y-10 px-8 py-6 max-w-3xl mx-auto">
       <section>
         <h2 className="text-2xl font-bold mb-6">Profile Setup – 10th Details</h2>
-        <form onSubmit={handleFinish} className="space-y-6 bg-white shadow-lg rounded-xl p-8">
+
+        <form
+          onSubmit={handleFinish}
+          className="space-y-6 bg-white shadow-lg rounded-xl p-8"
+        >
           {/* Medium */}
           <div>
             <label className="block mb-1 font-semibold">
               Medium of Study <span className="text-red-500">*</span>
             </label>
-            <select name="medium" value={form.medium} onChange={handleChange} className="w-full border rounded-lg p-2">
-              <option value="">Select Medium of Study</option>
+            <select
+              name="medium"
+              value={form.medium}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+            >
+              <option value="">Select Medium</option>
               <option>Urdu</option>
               <option>English</option>
               <option>Hindi</option>
@@ -145,7 +149,7 @@ export default function ProfileSetup10th() {
             </select>
           </div>
 
-          {/* Compulsory Language */}
+          {/* Language */}
           <div>
             <label className="block mb-1 font-semibold">
               First Compulsory Language <span className="text-red-500">*</span>
@@ -156,7 +160,7 @@ export default function ProfileSetup10th() {
               onChange={handleChange}
               className="w-full border rounded-lg p-2"
             >
-              <option value="">Select First Compulsory Language</option>
+              <option value="">Select Language</option>
               <option>Urdu</option>
               <option>Hindi</option>
               <option>Kashmiri</option>
@@ -185,30 +189,45 @@ export default function ProfileSetup10th() {
             </div>
           </section>
 
-          {/* Marks Input */}
+          {/* Marks */}
           <section>
             <h3 className="font-semibold mb-2">Enter Your Marks</h3>
             <div className="mt-4 space-y-2">
-              {[form.compulsoryLanguage, ...compulsorySubjects, ...form.selectedSubjects].map((subj, idx) => (
-                <div key={idx} className="flex items-center space-x-2">
-                  <p className="w-1/2 p-2 font-bold">{subj}</p>
-                  <input
-                    type="number"
-                    placeholder="Marks"
-                    value={form.marks[subj] || ""}
-                    onChange={(e) => handleMarksChange(subj, e.target.value)}
-                    className="w-1/2 border rounded-lg p-2"
-                  />
-                </div>
-              ))}
+              {[
+                form.compulsoryLanguage,
+                ...compulsorySubjects,
+                ...form.selectedSubjects,
+              ]
+                .filter((s) => s)
+                .map((subj, idx) => (
+                  <div key={idx} className="flex items-center space-x-2">
+                    <p className="w-1/2 p-2 font-bold">{subj}</p>
+                    <input
+                      type="number"
+                      placeholder="Marks"
+                      value={form.marks[subj] || ""}
+                      onChange={(e) =>
+                        handleMarksChange(subj, e.target.value)
+                      }
+                      className="w-1/2 border rounded-lg p-2"
+                    />
+                  </div>
+                ))}
             </div>
           </section>
 
           {/* Interest */}
           <section>
-            <label className="block mb-1 font-semibold">Your Interest Subject <span className="text-red-500">*</span></label>
-            <select name="interest" value={form.interest} onChange={handleChange} className="w-full border rounded-lg p-2">
-              <option value="">Select Your Interest Subject</option>
+            <label className="block mb-1 font-semibold">
+              Your Interest Subject <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="interest"
+              value={form.interest}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+            >
+              <option value="">Select Interest</option>
               {interestSubjects.map((subj, idx) => (
                 <option key={idx}>{subj}</option>
               ))}
@@ -217,13 +236,21 @@ export default function ProfileSetup10th() {
 
           {/* Ambition */}
           <section>
-            <label className="block mb-1 font-semibold">Your Ambition <span className="text-red-500">*</span></label>
-            <select name="ambition" value={form.ambition} onChange={handleChange} className="w-full border rounded-lg p-2">
-              <option value="">Select Your Ambition</option>
+            <label className="block mb-1 font-semibold">
+              Your Ambition <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="ambition"
+              value={form.ambition}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+            >
+              <option value="">Select Ambition</option>
               {ambitionOptions.map((amb, idx) => (
                 <option key={idx}>{amb}</option>
               ))}
             </select>
+
             {form.ambition === "Others" && (
               <input
                 type="text"
@@ -237,7 +264,10 @@ export default function ProfileSetup10th() {
           </section>
 
           <div>
-            <button type="submit" className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <button
+              type="submit"
+              className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
               Save & Finish
             </button>
           </div>
@@ -246,5 +276,3 @@ export default function ProfileSetup10th() {
     </div>
   );
 }
-
-

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "./supabase"; // adjust path
 
 function SignUp() {
   const [form, setForm] = useState({
@@ -15,7 +16,7 @@ function SignUp() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // handle form submit
+  // EMAIL + PASSWORD SIGNUP
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -26,88 +27,149 @@ function SignUp() {
 
     setLoading(true);
 
-    try {
-      const response = await fetch("http://localhost:8000/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+    // 1️⃣ Create Supabase user
+    const { data, error } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+    });
 
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log(responseData.user_id);
-        localStorage.setItem("user_id", responseData.user_id);
-        alert("Account created successfully!");
-        localStorage.setItem("isAuthenticated", "true");
-        localStorage.setItem("userName", form.name); // store name
-        navigate("/profile-setup-basic");
-      } else {
-        const errorData = await response.json();
-        alert(`Failed to sign up: ${errorData.detail}`);
-      }
-    } catch (err) {
-      console.error("Sign up error:", err);
-      alert("An error occurred. Please try again later.");
-    } finally {
+    if (error) {
+      alert(error.message);
       setLoading(false);
+      return;
     }
+
+    const user = data.user;
+
+   /* // 2️⃣ Save name to profiles table
+    await supabase.from("signUp").insert({
+      id: user.id,
+      full_name: form.name,
+    });*/
+
+    alert("Account created successfully!");
+
+    navigate("/profile-setup-basic");
+    setLoading(false);
+  };
+
+  // GOOGLE SIGN-IN
+  const signInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: "http://localhost:3000/auth/callback" },
+    });
+  };
+
+  // MICROSOFT SIGN-IN
+  const signInWithMicrosoft = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "azure",
+      options: { redirectTo: "http://localhost:3000/auth/callback" },
+    });
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-lg rounded-2xl p-8 w-96"
-      >
-        <h2 className="text-2xl font-bold mb-6 text-center">Sign Up</h2>
+    <div className="bg-white min-h-screen flex items-center justify-center">
+      <div className="bg-[#FEF9F2] p-20 rounded-3xl shadow-2xl w-full max-w-2xl border-2 border-[#8B5E34]">
+        <h2 className="text-4xl font-bold text-center mb-10 text-[#8B5E34]">
+          Sign Up
+        </h2>
 
-        <input
-          type="text"
-          name="name"
-          placeholder="Full Name"
-          className="w-full p-3 mb-4 border rounded-lg"
-          value={form.name}
-          onChange={handleChange}
-          required
-        />
+        <form onSubmit={handleSubmit}>
+          {/* Full Name */}
+          <div className="mb-8">
+            <label className="block text-[#8B5E34] text-base font-semibold mb-3">
+              Full Name
+            </label>
+            <input
+              type="text"
+              name="name"
+              placeholder="Enter your name"
+              value={form.name}
+              onChange={handleChange}
+              className="shadow appearance-none border rounded w-full py-5 px-6 text-lg text-[#8B5E34] bg-[#FEF9F2] focus:outline-none focus:ring-2 focus:ring-[#A47148]"
+              required
+            />
+          </div>
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          className="w-full p-3 mb-4 border rounded-lg"
-          value={form.email}
-          onChange={handleChange}
-          required
-        />
+          {/* Email */}
+          <div className="mb-8">
+            <label className="block text-[#8B5E34] text-base font-semibold mb-3">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter your email"
+              value={form.email}
+              onChange={handleChange}
+              className="shadow appearance-none border rounded w-full py-5 px-6 text-lg text-[#8B5E34] bg-[#FEF9F2] focus:outline-none focus:ring-2 focus:ring-[#A47148]"
+              required
+            />
+          </div>
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          className="w-full p-3 mb-6 border rounded-lg"
-          value={form.password}
-          onChange={handleChange}
-          required
-        />
+          {/* Password */}
+          <div className="mb-10">
+            <label className="block text-[#8B5E34] text-base font-semibold mb-3">
+              Password
+            </label>
+            <input
+              type="password"
+              name="password"
+              placeholder="Enter your password"
+              value={form.password}
+              onChange={handleChange}
+              className="shadow appearance-none border rounded w-full py-5 px-6 text-lg text-[#8B5E34] bg-[#FEF9F2] focus:outline-none focus:ring-2 focus:ring-[#A47148]"
+              required
+            />
+          </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full ${
-            loading ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"
-          } text-white py-3 rounded-lg transition`}
-        >
-          {loading ? "Signing Up..." : "Sign Up"}
-        </button>
+          {/* Signup Button */}
+          <div className="flex items-center justify-between mb-10">
+            <button
+              type="submit"
+              disabled={loading}
+              className={`bg-gradient-to-r from-[#8B5E34] to-[#A47148] hover:scale-105 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition-transform text-lg ${
+                loading ? "opacity-60 cursor-not-allowed" : ""
+              }`}
+            >
+              {loading ? "Signing Up..." : "Sign Up"}
+            </button>
 
-        <p className="text-sm text-center mt-4">
-          Already have an account?{" "}
-          <Link to="/signin" className="text-blue-600 hover:underline">
-            Sign In
-          </Link>
-        </p>
-      </form>
+            <Link
+              to="/signin"
+              className="inline-block align-baseline font-semibold text-base text-[#8B5E34] hover:text-[#A47148]"
+            >
+              Already have an account?
+            </Link>
+          </div>
+        </form>
+
+        {/* Divider */}
+        <div className="flex items-center my-8">
+          <div className="flex-1 h-px bg-[#8B5E34]"></div>
+          <span className="px-4 text-[#8B5E34] font-semibold text-lg">OR</span>
+          <div className="flex-1 h-px bg-[#8B5E34]"></div>
+        </div>
+
+        {/* Google/Microsoft */}
+        <div className="space-y-5">
+          <button
+            onClick={signInWithGoogle}
+            className="w-full py-4 rounded-xl border-2 border-[#8B5E34] text-[#8B5E34] font-semibold text-lg bg-white hover:bg-[#F2E6D8] transition"
+          >
+            Sign up with Google
+          </button>
+
+          <button
+            onClick={signInWithMicrosoft}
+            className="w-full py-4 rounded-xl border-2 border-[#8B5E34] text-[#8B5E34] font-semibold text-lg bg-white hover:bg-[#F2E6D8] transition"
+          >
+            Sign up with Microsoft
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
