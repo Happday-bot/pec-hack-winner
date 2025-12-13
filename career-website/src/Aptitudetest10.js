@@ -196,17 +196,8 @@ const AptitudeTest10 = () => {
   };
 
 const handleGoToDashboard = () => {
-  if (!finalResults) return;
-
-  if (finalResults.reliability > 45) {
-    // No backend: just navigate to courses
-    navigate("/courses");
-  } else {
-    alert("Your answers were not reliable enough. Please retake the quiz.");
-    navigate("/aptitude-test");
-  }
+  navigate("/courses");
 };
-
 
   const TOTAL_QUESTIONS = questions.length;
   const progressRatio = currentIndex / (TOTAL_QUESTIONS || 1);

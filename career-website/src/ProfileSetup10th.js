@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 export default function ProfileSetup10th({ onComplete, initialData }) {
-  // 1️⃣ Empty structure
+  // 1️⃣ Empty structure (UPDATED)
   const emptyForm = {
     medium: "",
     compulsoryLanguage: "",
@@ -65,7 +65,7 @@ export default function ProfileSetup10th({ onComplete, initialData }) {
     ]);
   }, []);
 
-  // 4️⃣ IMPORTANT: Load saved data for View/Edit
+  // 4️⃣ Load saved data for View/Edit
   useEffect(() => {
     if (initialData) {
       setForm({
@@ -73,6 +73,7 @@ export default function ProfileSetup10th({ onComplete, initialData }) {
         ...initialData,
         selectedSubjects: initialData.selectedSubjects || [],
         marks: initialData.marks || {},
+        otherAmbition: "",
       });
     }
   }, [initialData]);
@@ -104,7 +105,8 @@ export default function ProfileSetup10th({ onComplete, initialData }) {
     e.preventDefault();
 
     if (!form.medium) return alert("Please select a medium.");
-    if (!form.compulsoryLanguage) return alert("Please select a compulsory language.");
+    if (!form.compulsoryLanguage)
+      return alert("Please select a compulsory language.");
 
     const allSubjects = [
       form.compulsoryLanguage,
@@ -126,15 +128,17 @@ export default function ProfileSetup10th({ onComplete, initialData }) {
 
     const finalData = {
       ...form,
-      ambition: form.ambition === "Others" ? form.otherAmbition : form.ambition,
+      ambition:
+        form.ambition === "Others"
+          ? form.otherAmbition
+          : form.ambition,
     };
 
     delete finalData.otherAmbition;
 
-    // ✅ Save ONLY data (not completion flag)
-    localStorage.setItem("profile10th", JSON.stringify(finalData));
+    // ✅ Save only data
+    sessionStorage.setItem("profile10th", JSON.stringify(finalData));
 
-    // ✅ Tell parent that save is successful
     if (onComplete) onComplete();
 
     alert("✅ Profile 10th details saved successfully!");
@@ -143,13 +147,23 @@ export default function ProfileSetup10th({ onComplete, initialData }) {
   // 7️⃣ UI
   return (
     <div className="space-y-10 px-8 py-6 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold">Profile Setup – 10th Details</h2>
+      <h2 className="text-2xl font-bold">
+        Profile Setup – 10th Details
+      </h2>
 
-      <form onSubmit={handleFinish} className="space-y-6 bg-white shadow-lg rounded-xl p-8">
+      <form
+        onSubmit={handleFinish}
+        className="space-y-6 bg-white shadow-lg rounded-xl p-8"
+      >
         {/* Medium */}
         <div>
           <label className="font-semibold">Medium *</label>
-          <select name="medium" value={form.medium} onChange={handleChange} className="w-full border p-2 rounded">
+          <select
+            name="medium"
+            value={form.medium}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+          >
             <option value="">Select</option>
             <option>Urdu</option>
             <option>English</option>
@@ -159,9 +173,11 @@ export default function ProfileSetup10th({ onComplete, initialData }) {
           </select>
         </div>
 
-        {/* Language */}
+        {/* Compulsory Language */}
         <div>
-          <label className="font-semibold">Compulsory Language *</label>
+          <label className="font-semibold">
+            Compulsory Language *
+          </label>
           <select
             name="compulsoryLanguage"
             value={form.compulsoryLanguage}
@@ -178,7 +194,9 @@ export default function ProfileSetup10th({ onComplete, initialData }) {
 
         {/* Optional Subjects */}
         <div>
-          <h3 className="font-semibold mb-2">Optional Subjects</h3>
+          <h3 className="font-semibold mb-2">
+            Optional Subjects
+          </h3>
           <div className="flex flex-wrap gap-2">
             {additionalSubjects.map((subj) => (
               <button
@@ -204,11 +222,15 @@ export default function ProfileSetup10th({ onComplete, initialData }) {
             .filter(Boolean)
             .map((subj) => (
               <div key={subj} className="flex gap-2 items-center">
-                <span className="w-1/2 font-bold">{subj}</span>
+                <span className="w-1/2 font-bold">
+                  {subj}
+                </span>
                 <input
                   type="number"
                   value={form.marks[subj] || ""}
-                  onChange={(e) => handleMarksChange(subj, e.target.value)}
+                  onChange={(e) =>
+                    handleMarksChange(subj, e.target.value)
+                  }
                   className="w-1/2 border p-2 rounded"
                 />
               </div>
@@ -218,7 +240,12 @@ export default function ProfileSetup10th({ onComplete, initialData }) {
         {/* Interest */}
         <div>
           <label className="font-semibold">Interest *</label>
-          <select name="interest" value={form.interest} onChange={handleChange} className="w-full border p-2 rounded">
+          <select
+            name="interest"
+            value={form.interest}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+          >
             <option value="">Select</option>
             {interestSubjects.map((i) => (
               <option key={i}>{i}</option>
@@ -229,7 +256,12 @@ export default function ProfileSetup10th({ onComplete, initialData }) {
         {/* Ambition */}
         <div>
           <label className="font-semibold">Ambition *</label>
-          <select name="ambition" value={form.ambition} onChange={handleChange} className="w-full border p-2 rounded">
+          <select
+            name="ambition"
+            value={form.ambition}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+          >
             <option value="">Select</option>
             {ambitionOptions.map((a) => (
               <option key={a}>{a}</option>
@@ -248,7 +280,10 @@ export default function ProfileSetup10th({ onComplete, initialData }) {
           )}
         </div>
 
-        <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded">
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-6 py-2 rounded"
+        >
           Save & Finish
         </button>
       </form>

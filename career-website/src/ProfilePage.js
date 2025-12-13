@@ -4,7 +4,7 @@ import ProfileSetup10th from "./ProfileSetup10th";
 import ProfileSetup12th from "./ProfileSetup12th";
 
 export default function ProfileSettings() {
-  const qualification = localStorage.getItem("qualification") || "12";
+  const [qualification, setQualification] = useState("12");
   const [editSection, setEditSection] = useState(null);
 
   const [basicDone, setBasicDone] = useState(false);
@@ -13,7 +13,7 @@ export default function ProfileSettings() {
 
   // ---------- STRICT 10TH CHECK ----------
   const is10thComplete = () => {
-    const raw = localStorage.getItem("profile10th");
+    const raw = sessionStorage.getItem("profile10th");
     if (!raw) return false;
     const d = JSON.parse(raw);
 
@@ -28,7 +28,7 @@ export default function ProfileSettings() {
 
   // ---------- STRICT 12TH CHECK ----------
   const is12thComplete = () => {
-    const raw = localStorage.getItem("profile12th");
+    const raw = sessionStorage.getItem("profile12th");
     if (!raw) return false;
     const d = JSON.parse(raw);
 
@@ -48,8 +48,19 @@ export default function ProfileSettings() {
     return true;
   };
 
+  // ---------- SYNC QUALIFICATION SAFELY ----------
   useEffect(() => {
-    setBasicDone(!!localStorage.getItem("profileBasic"));
+    const basicRaw = sessionStorage.getItem("profileBasic");
+    const basic = basicRaw ? JSON.parse(basicRaw) : null;
+
+    if (basic?.qualification) {
+      sessionStorage.setItem("qualification", basic.qualification);
+      setQualification(basic.qualification);
+    } else {
+      setQualification(sessionStorage.getItem("qualification") || "12");
+    }
+
+    setBasicDone(!!basicRaw);
     setTenthDone(is10thComplete());
     setTwelfthDone(is12thComplete());
   }, []);
@@ -58,39 +69,70 @@ export default function ProfileSettings() {
     <div className="max-w-5xl mx-auto mt-10">
       <h2 className="text-xl font-bold mb-4">Profile Setup Status</h2>
 
-      <Section title="Profile Setup – Basic" done={basicDone}
-        onClick={() => setEditSection(editSection === "basic" ? null : "basic")} />
+      <Section
+        title="Profile Setup – Basic"
+        done={basicDone}
+        onClick={() => setEditSection(editSection === "basic" ? null : "basic")}
+      />
 
       {editSection === "basic" && (
         <ProfileSetupBasic
-          initialData={basicDone ? JSON.parse(localStorage.getItem("profileBasic")) : null}
-          onComplete={() => { setBasicDone(true); setEditSection(null); }}
+          initialData={
+            basicDone ? JSON.parse(sessionStorage.getItem("profileBasic")) : null
+          }
+          onComplete={() => {
+            const updatedBasic = JSON.parse(sessionStorage.getItem("profileBasic"));
+            if (updatedBasic?.qualification) {
+              sessionStorage.setItem("qualification", updatedBasic.qualification);
+              setQualification(updatedBasic.qualification);
+            }
+            setBasicDone(true);
+            setEditSection(null);
+          }}
         />
       )}
 
+      {/* ---------- 10TH ---------- */}
       {qualification === "10" && (
         <>
-          <Section title="Profile Setup – 10th" done={tenthDone}
-            onClick={() => setEditSection(editSection === "10th" ? null : "10th")} />
+          <Section
+            title="Profile Setup – 10th"
+            done={tenthDone}
+            onClick={() => setEditSection(editSection === "10th" ? null : "10th")}
+          />
 
           {editSection === "10th" && (
             <ProfileSetup10th
-              initialData={tenthDone ? JSON.parse(localStorage.getItem("profile10th")) : null}
-              onComplete={() => { setTenthDone(true); setEditSection(null); }}
+              initialData={
+                tenthDone ? JSON.parse(sessionStorage.getItem("profile10th")) : null
+              }
+              onComplete={() => {
+                setTenthDone(true);
+                setEditSection(null);
+              }}
             />
           )}
         </>
       )}
 
+      {/* ---------- 12TH ---------- */}
       {qualification === "12" && (
         <>
-          <Section title="Profile Setup – 12th" done={twelfthDone}
-            onClick={() => setEditSection(editSection === "12th" ? null : "12th")} />
+          <Section
+            title="Profile Setup – 12th"
+            done={twelfthDone}
+            onClick={() => setEditSection(editSection === "12th" ? null : "12th")}
+          />
 
           {editSection === "12th" && (
             <ProfileSetup12th
-              initialData={twelfthDone ? JSON.parse(localStorage.getItem("profile12th")) : null}
-              onComplete={() => { setTwelfthDone(true); setEditSection(null); }}
+              initialData={
+                twelfthDone ? JSON.parse(sessionStorage.getItem("profile12th")) : null
+              }
+              onComplete={() => {
+                setTwelfthDone(true);
+                setEditSection(null);
+              }}
             />
           )}
         </>

@@ -39,9 +39,9 @@ export default function ProfileSetupBasic({ initialData }) {
     e.preventDefault();
 
     // ✅ SAVE BASIC PROFILE
-    localStorage.setItem("profileBasic", JSON.stringify(form));
+    sessionStorage.setItem("profileBasic", JSON.stringify(form));
     localStorage.setItem("profileBasicCompleted", "true");
-    localStorage.setItem("qualification", form.qualification);
+    sessionStorage.setItem("qualification", form.qualification);
 
     // 👉 Move forward
     navigate("/aptitude-landing", {

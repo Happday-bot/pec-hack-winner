@@ -81,8 +81,8 @@ export default function ProfileSetup12th({ onComplete, initialData }) {
     delete finalData.otherAmbition;
 
     // ✅ SAVE ONLY DATA
-    localStorage.setItem("profile12th", JSON.stringify(finalData));
-    localStorage.setItem("stream", form.stream);
+    sessionStorage.setItem("profile12th", JSON.stringify(finalData));
+    sessionStorage.setItem("stream", form.stream);
 
     if (onComplete) onComplete();
     alert("✅ 12th profile saved successfully!");
