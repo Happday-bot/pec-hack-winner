@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "./supabase"; // adjust path
 
 function SignIn({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
@@ -14,13 +16,44 @@ function SignIn({ onLogin }) {
       return;
     }
 
-    // Simulate successful login without backend
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("userName", "Guest User"); // dummy name
+    setLoading(true);
 
-    onLogin?.();
-    navigate("/dashboard");
+    try {
+      // 1️⃣ Sign in via Supabase Auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        // Check if it's the email confirmation issue
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          alert("Please verify your signup in your email before signing in.");
+        } else {
+          alert("Login failed: " + error.message);
+        }
+        return;
+      }
+      console.log("Login successful:", data);
+      // 2️⃣ Optional: fetch user profile
+      // 2️⃣ Get user's name from Auth user_metadata
+      const user = data.user;
+      const userName = user?.user_metadata?.full_name || "User";
+      console.log("Logged in user name:", userName);
+      // 3️⃣ Set local storage / state
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userName", userName);
+
+      onLogin?.(); // callback if any
+      navigate("/dashboard");
+    } catch (err) {
+      console.log("Unexpected error:", err);
+      alert("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <div className="bg-white min-h-screen flex items-center justify-center">

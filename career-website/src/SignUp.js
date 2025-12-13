@@ -27,31 +27,44 @@ function SignUp() {
 
     setLoading(true);
 
-    // 1️⃣ Create Supabase user
-    const { data, error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-    });
+    try {
+      // 1️⃣ Create Supabase Auth user with metadata
+      const { data, error } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            full_name: form.name, // stored safely in auth.users
+          },
+        },
+      });
 
-    if (error) {
-      alert(error.message);
+      if (error) {
+        // Handle duplicate email or other signup errors
+        if (error.message.toLowerCase().includes("user already registered")) {
+          alert("User already exists! Please sign in.");
+          navigate("/signin");
+          return;
+        } else {
+          alert(error.message);
+          return;
+        }
+      }
+
+      console.log("Signup successful:", data);
+
+      // ✅ Success → redirect
+      alert("Account created successfully! Please verify your email before signing in.");
+      navigate("/profile-setup-basic");
+
+    } catch (err) {
+      console.log("Unexpected error:", err);
+      alert("An unexpected error occurred. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const user = data.user;
-
-   /* // 2️⃣ Save name to profiles table
-    await supabase.from("signUp").insert({
-      id: user.id,
-      full_name: form.name,
-    });*/
-
-    alert("Account created successfully!");
-
-    navigate("/profile-setup-basic");
-    setLoading(false);
   };
+
 
   // GOOGLE SIGN-IN
   const signInWithGoogle = async () => {
@@ -130,9 +143,8 @@ function SignUp() {
             <button
               type="submit"
               disabled={loading}
-              className={`bg-gradient-to-r from-[#8B5E34] to-[#A47148] hover:scale-105 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition-transform text-lg ${
-                loading ? "opacity-60 cursor-not-allowed" : ""
-              }`}
+              className={`bg-gradient-to-r from-[#8B5E34] to-[#A47148] hover:scale-105 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition-transform text-lg ${loading ? "opacity-60 cursor-not-allowed" : ""
+                }`}
             >
               {loading ? "Signing Up..." : "Sign Up"}
             </button>
