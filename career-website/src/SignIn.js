@@ -26,23 +26,36 @@ function SignIn({ onLogin }) {
       });
 
       if (error) {
-        // Check if it's the email confirmation issue
-        if (error.message.toLowerCase().includes("email not confirmed")) {
-          alert("Please verify your signup in your email before signing in.");
-        } else {
-          alert("Login failed: " + error.message);
+        // 🎯 Explicit email confirmation gate
+        if (
+          error.message.toLowerCase().includes("email not confirmed") ||
+          error.message.toLowerCase().includes("confirm")
+        ) {
+          alert("Email not yet confirmed. Please check your inbox.");
+          return;
         }
+
+        alert("Login failed: " + error.message);
         return;
       }
-      console.log("Login successful:", data);
+
       // 2️⃣ Optional: fetch user profile
-      // 2️⃣ Get user's name from Auth user_metadata
-      const user = data.user;
-      const userName = user?.user_metadata?.full_name || "User";
-      console.log("Logged in user name:", userName);
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("email",data.user.email)
+        .single();
+
+      if (profileError) {
+        console.log("Profile fetch error:", profileError);
+      }
+
+      console.log("Logged in user profile:", profileData);
+
       // 3️⃣ Set local storage / state
       localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userName", userName);
+      localStorage.setItem("userName", profileData?.fullname || "User");
+      console.log("User logged in:", profileData?.fullname);
 
       onLogin?.(); // callback if any
       navigate("/dashboard");

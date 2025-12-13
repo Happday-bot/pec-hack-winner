@@ -26,45 +26,61 @@ function SignUp() {
     }
 
     setLoading(true);
+    // 1️⃣ Check if email already exists
+    const { data: existing, error: checkError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", form.email)
+      .maybeSingle();
 
-    try {
-      // 1️⃣ Create Supabase Auth user with metadata
-      const { data, error } = await supabase.auth.signUp({
+    if (checkError) {
+      console.error(checkError);
+      return;
+    }
+
+    if (existing) {
+      alert("User already exists");
+      navigate("/signin");
+      return;
+    }
+
+    // 1️⃣ Create Supabase user
+    const { data, error } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+    });
+
+    if (error) {
+      alert(error.message);
+      setLoading(false);
+      return;
+    }
+
+    const user = data.user;
+
+    // 2️⃣ Save profile data
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .insert({
+        fullname: form.name,
         email: form.email,
-        password: form.password,
-        options: {
-          data: {
-            full_name: form.name, // stored safely in auth.users
-          },
-        },
       });
 
-      if (error) {
-        // Handle duplicate email or other signup errors
-        if (error.message.toLowerCase().includes("user already registered")) {
-          alert("User already exists! Please sign in.");
-          navigate("/signin");
-          return;
-        } else {
-          alert(error.message);
-          return;
-        }
-      }
+    // Log full response for debugging
+    console.log("Supabase insert response:", { profileData, profileError });
 
-      console.log("Signup successful:", data);
-
-      // ✅ Success → redirect
-      alert("Account created successfully! Please verify your email before signing in.");
-      navigate("/profile-setup-basic");
-
-    } catch (err) {
-      console.log("Unexpected error:", err);
-      alert("An unexpected error occurred. Please try again.");
-    } finally {
+    if (profileError) {
+      alert("Error creating profile: " + profileError.message);
       setLoading(false);
+      return; // Stop further execution
     }
-  };
 
+    // If success
+    alert("Account created successfully!");
+    navigate("/profile-setup-basic");
+    setLoading(false);
+
+  };
 
   // GOOGLE SIGN-IN
   const signInWithGoogle = async () => {
