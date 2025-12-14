@@ -1,221 +1,61 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleGenAI } from "@google/genai";
+import { supabase } from "./supabase";
+
 
 
 
 const AptitudeTest = () => {
   const navigate = useNavigate();
   const ai = new GoogleGenAI({
-    apiKey: "AIzaSyDDDg84pogMjdv7p1W7DGnJPFWnbUzqYZM", // explicitly added as requested
+    apiKey: "AIzaSyC8U77n1qquJcpian5bMpEtnokkbQe8OAk", // explicitly added as requested
   });
-
-  /* =======================
-     QUESTIONS (GEMINI-ALIGNED)
-     ======================= */
-
-  const questions = [
-    {
-      id: "Q1",
-      text: "Which activity do you enjoy most in your free time?",
-      options: ["Drawing...", "Solving puzzles...", "Managing money...", "Reading about the human body..."],
-    },
-    {
-      id: "Q2",
-      text: "Which subject area comes most naturally to you?",
-      options: ["Literature...", "Mathematics and Physics", "Business Studies...", "Biology and Chemistry"],
-    },
-    {
-      id: "Q3",
-      text: "When you encounter a broken appliance or machine, what is your first instinct?",
-      options: [
-        "Find a creative, temporary fix...",
-        "Open it up, analyze the internal mechanism, and fix it",
-        "Calculate the cost of repair...",
-        "Understand the failure's impact...",
-      ],
-    },
-    {
-      id: "Q4",
-      text: "What kind of impact do you want your future work to have?",
-      options: [
-        "Creating beautiful...",
-        "Building, designing, or innovating complex systems",
-        "Managing resources...",
-        "Healing people...",
-      ],
-    },
-    {
-      id: "Q5",
-      text: "Where would you prefer to spend most of your workday?",
-      options: [
-        "In a studio...",
-        "In a high-tech lab, a server room, or a construction site",
-        "In an office...",
-        "In a hospital...",
-      ],
-    },
-    {
-      id: "Q6",
-      text: "How do you prefer to solve a difficult problem?",
-      options: [
-        "Brainstorming...",
-        "Following a step-by-step, logical, and structured approach",
-        "Negotiating a compromise...",
-        "Consulting experts...",
-      ],
-    },
-    {
-      id: "Q7",
-      text: "Which aspect of technology excites you the most?",
-      options: [
-        "Designing the look and feel of apps (UI/UX)",
-        "Writing the code/logic that makes apps work",
-        "Analyzing market trends...",
-        "Using technology for medical diagnosis...",
-      ],
-    },
-    {
-      id: "Q8",
-      text: "You have an idea for a business/project. Do you prefer:",
-      options: [
-        "Focus on the core, innovative idea...",
-        "Thoroughly test technical feasibility",
-        "Create a detailed financial plan",
-        "Assess ethical implications...",
-      ],
-    },
-    {
-      id: "Q9",
-      text: "In a group project, you naturally take the role of the:",
-      options: [
-        "Presenter and visual designer",
-        "System architect and main executor",
-        "Treasurer and project manager",
-        "Researcher and subject matter expert",
-      ],
-    },
-    {
-      id: "Q10",
-      text: "You learn best by:",
-      options: [
-        "Watching videos...",
-        "Deconstructing formulas and principles",
-        "Case studies and real-world scenarios",
-        "Scientific experimentation...",
-      ],
-    },
-    {
-      id: "Q11",
-      text: "When facing a high-pressure deadline, you:",
-      options: [
-        "Focus on presentation...",
-        "Optimize the process systematically",
-        "Delegate tasks and manage timelines",
-        "Ensure quality and correctness",
-      ],
-    },
-    {
-      id: "Q12",
-      text: "Which Math subject is/was your favorite?",
-      options: [
-        "Not applicable (N/A)",
-        "Calculus, Algebra, Differential Equations",
-        "Statistics, Probability, Financial Math",
-        "Modeling biological/physical systems",
-      ],
-    },
-    {
-      id: "Q13",
-      text: "Which part of Physics interests you most?",
-      options: [
-        "Advanced programming and digital systems",
-        "Simple machines and structures",
-        "Not applicable (N/A)",
-        "Optics and Medical Imaging",
-      ],
-    },
-    {
-      id: "Q14",
-      text: "Which area of Biology interests you most?",
-      options: [
-        "Human anatomy and disease diagnosis",
-        "Not applicable (N/A)",
-        "Bio-economic impact and health policy",
-        "Genetic modification and lab experiments",
-      ],
-    },
-    {
-      id: "Q15",
-      text: "Which sounds more appealing?",
-      options: [
-        "Writing a program to automate tasks",
-        "Designing a robot or machine",
-        "Not applicable (N/A)",
-        "Developing a drug or vaccine",
-      ],
-    },
-    {
-      id: "Q16",
-      text: "You prefer to work on problems related to:",
-      options: [
-        "Human–technology interaction",
-        "Large-scale infrastructure",
-        "Financial markets and trade",
-        "Cells, genes, molecules",
-      ],
-    },
-    {
-      id: "Q17",
-      text: "Which future field do you read about most?",
-      options: [
-        "Virtual/Augmented Reality",
-        "Self-driving cars and automation",
-        "Fintech and e-commerce",
-        "Personalized medicine",
-      ],
-    },
-    {
-      id: "Q18",
-      text: "Your peers would describe you as:",
-      options: [
-        "Creative and expressive",
-        "Logical and practical",
-        "Organized and persuasive",
-        "Caring and detail-oriented",
-      ],
-    },
-    {
-      id: "Q19",
-      text: "After 10th, I would be happy to drop:",
-      options: [
-        "Science and Math",
-        "Arts and Commerce",
-        "Arts and Science",
-        "Pure Math",
-      ],
-    },
-    {
-      id: "Q20",
-      text: "You are primarily motivated by:",
-      options: [
-        "Recognition for original ideas",
-        "Solving difficult technical challenges",
-        "Financial success and stability",
-        "Helping and caring for others",
-      ],
-    },
-  ];
-
-  /* =======================
-     STATE
-     ======================= */
 
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [confirm, setConfirm] = useState(false);
   const [finalResult, setFinalResult] = useState(null);
   const [finalText, setFinalText] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      const { data, error } = await supabase
+        .from("questions")
+        .select("qid, ques, A, B, C, D")
+        .order("qid", { ascending: true }); // or order_no
+
+      if (error) {
+        console.error("Supabase error:", error);
+        return;
+      }
+
+      const mapped = data.map((q) => ({
+        id: q.qid,              // 🔑 CRITICAL: mapping qid → id
+        text: q.ques,
+        options: [q.A, q.B, q.C, q.D],
+      }));
+
+      setQuestions(mapped);
+      setLoading(false);
+    };
+
+    fetchQuestions();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-500">Loading aptitude test…</p>
+      </div>
+    );
+  }
+
 
   /* =======================
      ANSWER HANDLER
@@ -229,6 +69,9 @@ const AptitudeTest = () => {
 
     if (index < questions.length - 1) {
       setIndex(index + 1);
+    } else {
+      // ✅ test completed
+      setIsCompleted(true);
     }
   };
 
@@ -237,6 +80,7 @@ const AptitudeTest = () => {
      ======================= */
 
   const handleFinalSubmit = async () => {
+    setIsSubmitting(true);
     const payload = {
       prompt_id: "CAREER_GUIDANCE_V4_DOMAIN_FILTERED",
       prompt: `You are a professional career guidance analyzer. Strictly adhere to the following steps and output format using ONLY the provided 'student_data' and the analysis key (A: Creative, B: Technical/Mechanical/Structured, C: Commerce/Finance/Management, D: Biological/Medical/Research):\n\n1. Tally the student's 'answers' (Q1-Q20) into the four clusters (A, B, C, D). Note Q14 and Q19 should be ignored if 'N/A' is used.\n\n2. Determine the *dominant cluster* (highest count).
@@ -338,9 +182,29 @@ If you cannot comply with the schema, return an empty JSON object {}.`,
       }
       console.log("✅ Parsed Gemini response:", parsed);
       setFinalResult(parsed);
+      const interests = parsed.final_outcome_recommendation.map(
+        (rec) => rec.field
+      );
+      const { error } = await supabase
+        .from("interest")
+        .insert([
+          {
+            student_id: parsed.student_id,
+            interest: {
+              recommended_fields: interests,
+            },
+          },
+        ]);
+
+      if (error) {
+        console.error("❌ Supabase insert failed:", error.message);
+        return;
+      }
     } catch (err) {
       console.error("Gemini error:", err);
       setFinalText("Unable to generate career analysis at this time.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -458,7 +322,7 @@ If you cannot comply with the schema, return an empty JSON object {}.`,
           ))}
         </div>
 
-        {index === questions.length - 1 && (
+        {isCompleted && (
           <div className="mt-6 text-center">
             <button
               onClick={() => setConfirm(true)}
@@ -469,14 +333,22 @@ If you cannot comply with the schema, return an empty JSON object {}.`,
           </div>
         )}
 
+
         {confirm && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
             <div className="bg-white p-6 rounded-xl text-center">
               <p className="mb-4">Confirm submission?</p>
               <div className="flex gap-4 justify-center">
                 <button onClick={() => setConfirm(false)}>Cancel</button>
-                <button onClick={handleFinalSubmit} className="bg-blue-600 text-white px-4 py-2 rounded">
-                  Confirm
+                <button
+                  onClick={handleFinalSubmit}
+                  disabled={isSubmitting}
+                  className={`px-4 py-2 rounded text-white ${isSubmitting
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
+                    }`}
+                >
+                  {isSubmitting ? "Analyzing..." : "Confirm"}
                 </button>
               </div>
             </div>
