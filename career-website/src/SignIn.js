@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "./supabase"; // adjust path
 
 function SignIn({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
@@ -14,13 +16,57 @@ function SignIn({ onLogin }) {
       return;
     }
 
-    // Simulate successful login without backend
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("userName", "Guest User"); // dummy name
+    setLoading(true);
 
-    onLogin?.();
-    navigate("/dashboard");
+    try {
+      // 1️⃣ Sign in via Supabase Auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      console.log("Sign-in response data:", data);
+      if (error) {
+        // 🎯 Explicit email confirmation gate
+        if (
+          error.message.toLowerCase().includes("email not confirmed") ||
+          error.message.toLowerCase().includes("confirm")
+        ) {
+          alert("Email not yet confirmed. Please check your inbox.");
+          return;
+        }
+
+        alert("Login failed: " + error.message);
+        return;
+      }
+
+      // 2️⃣ Optional: fetch user profile
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("email",data.user.email)
+        .single();
+
+      if (profileError) {
+        console.log("Profile fetch error:", profileError);
+      }
+
+      console.log("Logged in user profile:", profileData);
+
+      // 3️⃣ Set local storage / state
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userName", profileData?.fullname || "User");
+      console.log("User logged in:", profileData?.fullname);
+
+      onLogin?.(); // callback if any
+      navigate("/dashboard");
+    } catch (err) {
+      console.log("Unexpected error:", err);
+      alert("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <div className="bg-white min-h-screen flex items-center justify-center">

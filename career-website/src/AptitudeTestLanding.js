@@ -4,30 +4,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 const AptitudeLanding = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const qualification =
-    location.state?.qualification ||
-    localStorage.getItem("qualification") ||
-    "10";
-
-    useEffect(() => {
-  const isProfileCompleted = localStorage.getItem("profileBasicCompleted");
-
-  if (!isProfileCompleted) {
-    navigate("/profile-setup-basic");
-  }
-
-  localStorage.setItem("qualification", qualification);
-}, [qualification, navigate]);
-
-  useEffect(() => {
-    localStorage.setItem("qualification", qualification);
-  }, [qualification]);
+  const qualification = location.state?.qualification || "10"; // default to 10th if not passed
 
   const goToTest = () => {
-    const targetRoute = qualification === "10" ? "/test1" : "/test";
-
-    navigate(targetRoute);
+    if (qualification === "10") {
+      navigate("/test1");  // 10th test
+    } else if (qualification === "12") {
+      navigate("/test"); // 12th test
+    }
   };
 
   return (

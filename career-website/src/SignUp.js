@@ -26,6 +26,23 @@ function SignUp() {
     }
 
     setLoading(true);
+    // 1️⃣ Check if email already exists
+    const { data: existing, error: checkError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", form.email)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error(checkError);
+      return;
+    }
+
+    if (existing) {
+      alert("User already exists");
+      navigate("/signin");
+      return;
+    }
 
     // 1️⃣ Create Supabase user
     const { data, error } = await supabase.auth.signUp({
@@ -35,22 +52,37 @@ function SignUp() {
 
     if (error) {
       alert(error.message);
+      sessionStorage.clear();
       setLoading(false);
       return;
+    }else{
+      sessionStorage.setItem("signUpEmail", form.email);
     }
 
     const user = data.user;
 
-   /* // 2️⃣ Save name to profiles table
-    await supabase.from("signUp").insert({
-      id: user.id,
-      full_name: form.name,
-    });*/
+    // 2️⃣ Save profile data
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .insert({
+        fullname: form.name,
+        email: form.email,
+      });
 
+    // Log full response for debugging
+    console.log("Supabase insert response:", { profileData, profileError });
+
+    if (profileError) {
+      alert("Error creating profile: " + profileError.message);
+      setLoading(false);
+      return; // Stop further execution
+    }
+
+    // If success
     alert("Account created successfully!");
-
     navigate("/profile-setup-basic");
     setLoading(false);
+
   };
 
   // GOOGLE SIGN-IN
@@ -130,9 +162,8 @@ function SignUp() {
             <button
               type="submit"
               disabled={loading}
-              className={`bg-gradient-to-r from-[#8B5E34] to-[#A47148] hover:scale-105 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition-transform text-lg ${
-                loading ? "opacity-60 cursor-not-allowed" : ""
-              }`}
+              className={`bg-gradient-to-r from-[#8B5E34] to-[#A47148] hover:scale-105 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition-transform text-lg ${loading ? "opacity-60 cursor-not-allowed" : ""
+                }`}
             >
               {loading ? "Signing Up..." : "Sign Up"}
             </button>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "./supabase"; // adjust path
 
 export default function ProfileSetupBasic({ initialData }) {
   const navigate = useNavigate();
@@ -11,123 +12,227 @@ export default function ProfileSetupBasic({ initialData }) {
     lastName: "",
     dob: "",
     phone: "",
+    address: "",
     qualification: "",
-    stream: "",
-  };
+    aadhar: "",
+    motherTongue: "",
+    caste: "",
+    income: "",
+    gender: ""
+  });
 
-  // ---------- STATE ----------
-  const [form, setForm] = useState(emptyForm);
-
-  // ---------- LOAD SAVED DATA ----------
-  useEffect(() => {
-    if (initialData) {
-      setForm({ ...emptyForm, ...initialData });
-    }
-  }, [initialData]);
-
-  // ---------- HANDLERS ----------
   const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setForm(prev => {
-      if (name === "qualification" && value === "10") {
-        return { ...prev, qualification: value, stream: "" };
-      }
-      return { ...prev, [name]: value };
-    });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // FRONTEND ONLY — NO BACKEND CALL
   const handleNext = (e) => {
     e.preventDefault();
 
-    sessionStorage.setItem("profileBasic", JSON.stringify(form));
-    localStorage.setItem("profileBasicCompleted", "true");
-    sessionStorage.setItem("qualification", form.qualification);
+    // Save form locally
+    localStorage.setItem("profileBasic", JSON.stringify(form));
 
-    navigate("/aptitude-landing", {
-      state: { qualification: form.qualification }
-    });
+    // Navigate based on qualification
+    if (form.qualification === "10") {
+      navigate("/profile-setup-10th");
+    } else if (form.qualification === "12") {
+      navigate("/profile-setup-12th");
+    } else {
+      alert("Please select a valid qualification (10th or 12th).");
+    }
   };
 
-  // ---------- UI ----------
   return (
-    <div className="max-w-xl mx-auto bg-white shadow-lg rounded-xl p-10">
-      <h1 className="text-2xl font-bold mb-8 text-center">
-        Profile Setup – General Info
-      </h1>
+    <div className="max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-8">
+      <h1 className="text-2xl font-bold mb-6">Profile Setup – General Info</h1>
 
-      <form onSubmit={handleNext} className="flex flex-col gap-6">
-        <Input
-          label="First Name *"
-          name="firstName"
-          value={form.firstName}
-          onChange={handleChange}
-          required
-        />
+      <form onSubmit={handleNext}>
+        <div className="space-y-4">
 
-        <Input
-          label="Middle Name"
-          name="middleName"
-          value={form.middleName}
-          onChange={handleChange}
-        />
+          {/* First Name */}
+          <div className="flex flex-col">
+            <label className="text-gray-700">
+              First Name<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="firstName"
+              placeholder="First Name"
+              value={form.firstName}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+              required
+            />
+          </div>
 
-        <Input
-          label="Last Name *"
-          name="lastName"
-          value={form.lastName}
-          onChange={handleChange}
-          required
-        />
+          {/* DOB */}
+          <div className="flex flex-col">
+            <label className="text-gray-700">
+              Date of Birth<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              name="dob"
+              value={form.dob}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+              required
+            />
+          </div>
 
-        <Input
-          label="Date of Birth *"
-          type="date"
-          name="dob"
-          value={form.dob}
-          onChange={handleChange}
-          required
-        />
+          {/* Email */}
+          <div className="flex flex-col">
+            <label className="text-gray-700">
+              Email ID<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Email ID"
+              value={form.email}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+              required
+            />
+          </div>
 
-        <Input
-          label="Phone Number *"
-          name="phone"
-          value={form.phone}
-          onChange={handleChange}
-          required
-        />
+          {/* Phone */}
+          <div className="flex flex-col">
+            <label className="text-gray-700">
+              Phone Number<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Phone Number"
+              value={form.phone}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+              required
+            />
+          </div>
 
-        <Select
-          label="Qualification *"
-          name="qualification"
-          value={form.qualification}
-          onChange={handleChange}
-          options={[
-            { label: "Select Qualification", value: "" },
-            { label: "10th", value: "10" },
-            { label: "12th", value: "12" }
-          ]}
-        />
+          {/* Address */}
+          <div className="flex flex-col">
+            <label className="text-gray-700">
+              Address<span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="address"
+              placeholder="Enter your address"
+              value={form.address}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+              required
+            ></textarea>
+          </div>
 
-        {/* ✅ STREAM ONLY FOR 12TH */}
-        {form.qualification === "12" && (
-          <Select
-            label="Stream *"
-            name="stream"
-            value={form.stream}
-            onChange={handleChange}
-            options={[
-              { label: "Select Stream", value: "" },
-              { label: "Science", value: "science" },
-              { label: "Commerce", value: "commerce" },
-              { label: "Arts", value: "arts" }
-            ]}
-          />
-        )}
+          {/* Qualification */}
+          <div className="flex flex-col">
+            <label className="text-gray-700">
+              Qualification<span className="text-red-500">*</span>
+            </label>
+            <select
+              name="qualification"
+              value={form.qualification}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+              required
+            >
+              <option value="">Select Qualification</option>
+              <option value="10">10th</option>
+              <option value="12">12th</option>
+            </select>
+          </div>
+
+          {/* Aadhar */}
+          <div className="flex flex-col">
+            <label className="text-gray-700">
+              Aadhar Number<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="aadhar"
+              placeholder="Aadhar Number"
+              value={form.aadhar}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+              required
+            />
+          </div>
+
+          {/* Mother Tongue */}
+          <div className="flex flex-col">
+            <label className="text-gray-700">
+              Mother Tongue<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="motherTongue"
+              placeholder="Mother Tongue"
+              value={form.motherTongue}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+              required
+            />
+          </div>
+
+          {/* Caste */}
+          <div className="flex flex-col">
+            <label className="text-gray-700">
+              Caste<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="caste"
+              placeholder="Caste"
+              value={form.caste}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+              required
+            />
+          </div>
+
+          {/* Income */}
+          <div className="flex flex-col">
+            <label className="text-gray-700">
+              Family's Annual Income<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              name="income"
+              placeholder="Annual Income"
+              value={form.income}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+              required
+            />
+          </div>
+
+          {/* Gender */}
+          <div className="flex flex-col">
+            <label className="text-gray-700">
+              Gender<span className="text-red-500">*</span>
+            </label>
+            <select
+              name="gender"
+              value={form.gender}
+              onChange={handleChange}
+              className="w-full border rounded-lg p-2"
+              required
+            >
+              <option value="">Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+        </div>
 
         <button
           type="submit"
-          className="mt-6 px-10 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           Save & Continue
         </button>
@@ -135,24 +240,3 @@ export default function ProfileSetupBasic({ initialData }) {
     </div>
   );
 }
-
-/* ---------- REUSABLE COMPONENTS ---------- */
-const Input = ({ label, ...props }) => (
-  <div className="flex flex-col">
-    <label className="mb-1">{label}</label>
-    <input {...props} className="border rounded-lg p-2" />
-  </div>
-);
-
-const Select = ({ label, options, ...props }) => (
-  <div className="flex flex-col">
-    <label className="mb-1">{label}</label>
-    <select {...props} className="border rounded-lg p-2">
-      {options.map(o => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  </div>
-);
