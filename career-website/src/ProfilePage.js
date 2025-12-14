@@ -13,6 +13,8 @@ export default function ProfileSettings() {
   const [twelfthDone, setTwelfthDone] = useState(false);
   const [twelfthData, setTwelfthData] = useState(null);
   const [twelfthExists, setTwelfthExists] = useState(false);
+  const [tenthExists, setTenthExists] = useState(false);
+  const [tenthData, setTenthData] = useState(null);
 
   const [basicProfile, setBasicProfile] = useState(null);
 
@@ -84,6 +86,28 @@ export default function ProfileSettings() {
 
     check12thProfile();
   }, []);
+
+  useEffect(() => {
+    const check10thProfile = async () => {
+      const { data, error } = await supabase
+        .from("10th_profile_data")
+        .select("*")
+        .eq("email", "alfredsam2006@gmail.com")
+        .maybeSingle();
+
+      if (error || !data) {
+        setTenthExists(false);
+        setTenthData(null);
+        return;
+      }
+
+      setTenthExists(true);
+      setTenthData(data);
+    };
+
+    check10thProfile();
+  }, []);
+
 
 
 
@@ -167,23 +191,25 @@ export default function ProfileSettings() {
         <>
           <Section
             title="Profile Setup – 10th"
-            done={tenthDone}
-            onClick={() => setEditSection(editSection === "10th" ? null : "10th")}
+            done={tenthExists}
+            onClick={() =>
+              setEditSection(editSection === "10th" ? null : "10th")
+            }
           />
 
           {editSection === "10th" && (
             <ProfileSetup10th
-              initialData={
-                tenthDone ? JSON.parse(sessionStorage.getItem("profile10th")) : null
-              }
+              initialData={tenthData}
+              email="alfredsam2006@gmail.com"
               onComplete={() => {
-                setTenthDone(true);
+                setTenthExists(true);
                 setEditSection(null);
               }}
             />
           )}
         </>
       )}
+
 
       {/* ---------- 12TH ---------- */}
       {qualification === "12" && (
