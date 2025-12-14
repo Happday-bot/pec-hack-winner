@@ -26,15 +26,10 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 const AptitudeLanding = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const qualification = location.state?.qualification || "10"; // default to 10th if not passed
-
   const goToTest = () => {
-    if (qualification === "10") {
-      navigate("/test1");  // 10th test
-    } else if (qualification === "12") {
-      navigate("/test"); // 12th test
-    }
+    
+      navigate("/test");  // 10th test
+    
   };
 
   return (

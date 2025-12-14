@@ -139,7 +139,8 @@ If you cannot comply with the schema, return an empty JSON object {}.`,
 
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        // model: "gemini-2.5-flash",
+        model: "gemini-1.5-flash",
         contents: [
           {
             role: "user",
@@ -154,6 +155,7 @@ If you cannot comply with the schema, return an empty JSON object {}.`,
 
       // SDK gives you a clean accessor
       const rawText = response.text;
+      console.log("Raw Gemini response text:", rawText);
 
       // Gemini often returns JSON as text → hard parse
       let parsed;

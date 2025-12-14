@@ -52,8 +52,11 @@ function SignUp() {
 
     if (error) {
       alert(error.message);
+      sessionStorage.clear();
       setLoading(false);
       return;
+    }else{
+      sessionStorage.setItem("signUpEmail", form.email);
     }
 
     const user = data.user;
