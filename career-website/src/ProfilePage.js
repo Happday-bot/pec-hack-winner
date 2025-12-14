@@ -11,6 +11,9 @@ export default function ProfileSettings() {
   const [basicDone, setBasicDone] = useState(false);
   const [tenthDone, setTenthDone] = useState(false);
   const [twelfthDone, setTwelfthDone] = useState(false);
+  const [twelfthData, setTwelfthData] = useState(null);
+  const [twelfthExists, setTwelfthExists] = useState(false);
+
   const [basicProfile, setBasicProfile] = useState(null);
 
 
@@ -57,6 +60,31 @@ export default function ProfileSettings() {
 
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    const check12thProfile = async () => {
+      const { data, error } = await supabase
+        .from("12th_profile_data")
+        .select("*")
+        .eq("email", "alfredsam2006@gmail.com")
+        .maybeSingle();
+
+      if (error) {
+        console.warn("No 12th profile found");
+        setTwelfthData(null);
+        setTwelfthDone(false);
+        setTwelfthExists(false);
+        return;
+      }
+      console.log("Supabase 12th Profile found:", data);
+      setTwelfthData(data);
+      setTwelfthDone(!!data);
+      setTwelfthExists(!!data);
+    };
+
+    check12thProfile();
+  }, []);
+
 
 
   // ---------- STRICT 10TH CHECK ----------
@@ -162,15 +190,13 @@ export default function ProfileSettings() {
         <>
           <Section
             title="Profile Setup – 12th"
-            done={twelfthDone}
+            done={twelfthExists}
             onClick={() => setEditSection(editSection === "12th" ? null : "12th")}
           />
 
           {editSection === "12th" && (
             <ProfileSetup12th
-              initialData={
-                twelfthDone ? JSON.parse(sessionStorage.getItem("profile12th")) : null
-              }
+              initialData={twelfthData} email="alfredsam2006@gmail.com"
               onComplete={() => {
                 setTwelfthDone(true);
                 setEditSection(null);
