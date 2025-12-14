@@ -24,7 +24,7 @@ function SignIn({ onLogin }) {
         email,
         password,
       });
-
+      console.log("Sign-in response data:", data);
       if (error) {
         // 🎯 Explicit email confirmation gate
         if (

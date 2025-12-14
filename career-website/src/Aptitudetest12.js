@@ -1,114 +1,755 @@
+// import React, { useState } from "react";
+// import { useNavigate } from "react-router-dom";
+
+// const AptitudeTest = () => {
+//   // Local dummy question tree (replaces backend)
+//   const sampleQuestionTree = {
+//     Question1: "Do you enjoy problem solving?",
+//     Options: {
+//       Yes: {
+//         Question2: "Do you like working with numbers?",
+//         Options: {
+//           Yes: "Consider Engineering",
+//           No: "Consider Computer Science",
+//         },
+//       },
+//       No: {
+//         Question2: "Do you prefer reading and analysis?",
+//         Options: {
+//           Yes: "Consider Humanities",
+//           No: "Consider Vocational Courses",
+//         },
+//       },
+//     },
+//   };
+
+//   const [questionTree, setQuestionTree] = useState(sampleQuestionTree);
+//   const [currentNode, setCurrentNode] = useState(sampleQuestionTree);
+//   const [answerTimes, setAnswerTimes] = useState([]);
+//   const [totalStartTime, setTotalStartTime] = useState(Date.now());
+//   const [questionStart, setQuestionStart] = useState(Date.now());
+//   const [finalRecommendation, setFinalRecommendation] = useState(null);
+
+//   const navigate = useNavigate();
+
+//   const handleChoice = (option) => {
+//     const endTime = Date.now();
+//     const elapsed = (endTime - questionStart) / 1000;
+//     setAnswerTimes((prev) => [...prev, elapsed]);
+
+//     const nextNode = currentNode.Options?.[option];
+
+//     if (typeof nextNode === "string") {
+//       // Leaf node -> Finish
+//       const totalDuration = ((endTime - totalStartTime) / 1000).toFixed(2);
+//       setFinalRecommendation({
+//         recommendation: [nextNode],
+//         times: [...answerTimes, elapsed],
+//         total: totalDuration,
+//       });
+//     } else {
+//       // Continue to next question
+//       setCurrentNode(nextNode);
+//       setQuestionStart(Date.now());
+//     }
+//   };
+
+//   if (!questionTree) {
+//     return <div className="p-8 text-lg">⏳ Loading questionnaire...</div>;
+//   }
+
+//   if (finalRecommendation) {
+//     // No backend: simply log the recommendation and allow user to continue
+//     console.log("Local final recommendation:", finalRecommendation);
+//   }
+
+//   if (finalRecommendation) {
+//     return (
+//       <div className="min-h-screen flex items-center justify-center bg-gray-50">
+//         <div className="bg-white shadow-xl rounded-xl p-8 max-w-lg text-center">
+//           <h2 className="text-2xl font-bold text-green-700 mb-4">🎉 Quiz Completed</h2>
+//           <p className="text-lg mb-3">
+//             ✅ Final Recommendation:{" "}
+//             <span className="font-bold text-blue-600">{finalRecommendation.recommendation}</span>
+//           </p>
+//           <button
+//             onClick={() => navigate("/courses")}
+//             className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+//           >
+//             Explore my Courses
+//           </button>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   // Current question
+//   const questionKey = Object.keys(currentNode).find((k) => k !== "Options");
+//   const question = currentNode[questionKey];
+//   const options = Object.keys(currentNode.Options || {});
+
+//   return (
+//     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+//       <main className="flex-1 px-8 py-6 flex items-center justify-center">
+//         <div className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-8">
+//           <h2 className="text-2xl font-bold mb-6 text-center">{question}</h2>
+//           <div className="space-y-4">
+//             {options.map((opt, i) => (
+//               <button
+//                 key={i}
+//                 onClick={() => handleChoice(opt)}
+//                 className="w-full bg-blue-100 text-blue-800 font-semibold py-3 px-4 rounded-lg hover:bg-blue-200 transition"
+//               >
+//                 {opt}
+//               </button>
+//             ))}
+//           </div>
+//         </div>
+//       </main>
+//     </div>
+//   );
+// };
+
+// export default AptitudeTest;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useState } from "react";
+// import { useNavigate } from "react-router-dom";
+
+// const AptitudeTest = () => {
+//   const navigate = useNavigate();
+
+//   const questions = {
+//     "Do you enjoy solving logical problems?": ["Strongly Agree", "Agree", "Neutral", "Disagree"],
+//     "Do you prefer working with numbers over words?": ["Yes", "Mostly", "Sometimes", "No"],
+//     "Do you enjoy coding or automation?": ["Very much", "Somewhat", "Rarely", "Not at all"],
+//     "Are you comfortable learning new technologies quickly?": ["Always", "Often", "Sometimes", "Never"],
+//     "Do you enjoy analytical thinking?": ["Yes", "Mostly", "Neutral", "No"],
+//     // 🔁 extend to 20
+//   };
+
+//   const questionEntries = Object.entries(questions);
+
+//   const [currentIndex, setCurrentIndex] = useState(0);
+//   const [answers, setAnswers] = useState([]);
+//   const [showSubmit, setShowSubmit] = useState(false);
+//   const [showConfirm, setShowConfirm] = useState(false);
+//   const [finalMessage, setFinalMessage] = useState(null);
+
+//   const handleAnswer = (optionIndex) => {
+//     const label = ["A", "B", "C", "D"][optionIndex];
+//     const updated = [...answers];
+//     updated[currentIndex] = label;
+//     setAnswers(updated);
+
+//     if (currentIndex === questionEntries.length - 1) {
+//       setShowSubmit(true);
+//     } else {
+//       setCurrentIndex((prev) => prev + 1);
+//     }
+//   };
+
+//   const handleFinalSubmit = () => {
+//     console.log("Final Answers:", answers);
+//     const randomPara ="This is the outcome for yours answers. Based on your responses, we recommend exploring courses that enhance your strengths and address areas for growth. Embrace continuous learning to unlock your full potential!";
+//     setFinalMessage(randomPara);
+//     setShowConfirm(false);
+//   };
+
+//   const [question, options] = questionEntries[currentIndex];
+
+//   // 🔹 Final advisory screen
+//   if (finalMessage) {
+//     return (
+//       <div className="min-h-screen flex items-center justify-center bg-gray-50">
+//         <div className="bg-white p-8 rounded-xl shadow-xl max-w-xl text-center">
+//           <p className="text-lg text-gray-700 mb-6">{finalMessage}</p>
+//           <button
+//             onClick={() => navigate("/courses")}
+//             className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+//           >
+//             OK
+//           </button>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+//       <div className="w-full max-w-2xl bg-white shadow-xl rounded-xl p-8">
+//         <h2 className="text-sm text-gray-500 text-center mb-2">
+//           Question {currentIndex + 1} of {questionEntries.length}
+//         </h2>
+
+//         <h1 className="text-2xl font-bold text-center mb-6">{question}</h1>
+
+//         <div className="space-y-4">
+//           {options.map((opt, idx) => (
+//             <button
+//               key={idx}
+//               onClick={() => handleAnswer(idx)}
+//               className="w-full bg-blue-100 text-blue-800 font-semibold py-3 px-4 rounded-lg hover:bg-blue-200 transition"
+//             >
+//               {opt}
+//             </button>
+//           ))}
+//         </div>
+
+//         {showSubmit && (
+//           <div className="mt-8 text-center">
+//             <button
+//               onClick={() => setShowConfirm(true)}
+//               className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition"
+//             >
+//               Submit Test
+//             </button>
+//           </div>
+//         )}
+//       </div>
+
+//       {/* 🔹 Confirmation Modal */}
+//       {showConfirm && (
+//         <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+//           <div className="bg-white rounded-xl p-6 shadow-xl max-w-sm text-center">
+//             <h3 className="text-lg font-bold mb-4">Confirm Submission</h3>
+//             <p className="text-gray-600 mb-6">
+//               Once submitted, your answers cannot be changed.
+//             </p>
+//             <div className="flex justify-center gap-4">
+//               <button
+//                 onClick={() => setShowConfirm(false)}
+//                 className="px-4 py-2 rounded-lg border font-semibold"
+//               >
+//                 Cancel
+//               </button>
+//               <button
+//                 onClick={handleFinalSubmit}
+//                 className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold"
+//               >
+//                 Confirm
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default AptitudeTest;
+
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { GoogleGenAI } from "@google/genai";
+
+
 
 const AptitudeTest = () => {
-  // Local dummy question tree (replaces backend)
-  const sampleQuestionTree = {
-    Question1: "Do you enjoy problem solving?",
-    Options: {
-      Yes: {
-        Question2: "Do you like working with numbers?",
-        Options: {
-          Yes: "Consider Engineering",
-          No: "Consider Computer Science",
-        },
-      },
-      No: {
-        Question2: "Do you prefer reading and analysis?",
-        Options: {
-          Yes: "Consider Humanities",
-          No: "Consider Vocational Courses",
-        },
-      },
-    },
-  };
-
-  const [questionTree, setQuestionTree] = useState(sampleQuestionTree);
-  const [currentNode, setCurrentNode] = useState(sampleQuestionTree);
-  const [answerTimes, setAnswerTimes] = useState([]);
-  const [totalStartTime, setTotalStartTime] = useState(Date.now());
-  const [questionStart, setQuestionStart] = useState(Date.now());
-  const [finalRecommendation, setFinalRecommendation] = useState(null);
-
   const navigate = useNavigate();
+  const ai = new GoogleGenAI({
+    apiKey: "AIzaSyDDDg84pogMjdv7p1W7DGnJPFWnbUzqYZM", // explicitly added as requested
+  });
 
-  const handleChoice = (option) => {
-    const endTime = Date.now();
-    const elapsed = (endTime - questionStart) / 1000;
-    setAnswerTimes((prev) => [...prev, elapsed]);
+  /* =======================
+     QUESTIONS (GEMINI-ALIGNED)
+     ======================= */
 
-    const nextNode = currentNode.Options?.[option];
+  const questions = [
+    {
+      id: "Q1",
+      text: "Which activity do you enjoy most in your free time?",
+      options: ["Drawing...", "Solving puzzles...", "Managing money...", "Reading about the human body..."],
+    },
+    {
+      id: "Q2",
+      text: "Which subject area comes most naturally to you?",
+      options: ["Literature...", "Mathematics and Physics", "Business Studies...", "Biology and Chemistry"],
+    },
+    {
+      id: "Q3",
+      text: "When you encounter a broken appliance or machine, what is your first instinct?",
+      options: [
+        "Find a creative, temporary fix...",
+        "Open it up, analyze the internal mechanism, and fix it",
+        "Calculate the cost of repair...",
+        "Understand the failure's impact...",
+      ],
+    },
+    {
+      id: "Q4",
+      text: "What kind of impact do you want your future work to have?",
+      options: [
+        "Creating beautiful...",
+        "Building, designing, or innovating complex systems",
+        "Managing resources...",
+        "Healing people...",
+      ],
+    },
+    {
+      id: "Q5",
+      text: "Where would you prefer to spend most of your workday?",
+      options: [
+        "In a studio...",
+        "In a high-tech lab, a server room, or a construction site",
+        "In an office...",
+        "In a hospital...",
+      ],
+    },
+    {
+      id: "Q6",
+      text: "How do you prefer to solve a difficult problem?",
+      options: [
+        "Brainstorming...",
+        "Following a step-by-step, logical, and structured approach",
+        "Negotiating a compromise...",
+        "Consulting experts...",
+      ],
+    },
+    {
+      id: "Q7",
+      text: "Which aspect of technology excites you the most?",
+      options: [
+        "Designing the look and feel of apps (UI/UX)",
+        "Writing the code/logic that makes apps work",
+        "Analyzing market trends...",
+        "Using technology for medical diagnosis...",
+      ],
+    },
+    {
+      id: "Q8",
+      text: "You have an idea for a business/project. Do you prefer:",
+      options: [
+        "Focus on the core, innovative idea...",
+        "Thoroughly test technical feasibility",
+        "Create a detailed financial plan",
+        "Assess ethical implications...",
+      ],
+    },
+    {
+      id: "Q9",
+      text: "In a group project, you naturally take the role of the:",
+      options: [
+        "Presenter and visual designer",
+        "System architect and main executor",
+        "Treasurer and project manager",
+        "Researcher and subject matter expert",
+      ],
+    },
+    {
+      id: "Q10",
+      text: "You learn best by:",
+      options: [
+        "Watching videos...",
+        "Deconstructing formulas and principles",
+        "Case studies and real-world scenarios",
+        "Scientific experimentation...",
+      ],
+    },
+    {
+      id: "Q11",
+      text: "When facing a high-pressure deadline, you:",
+      options: [
+        "Focus on presentation...",
+        "Optimize the process systematically",
+        "Delegate tasks and manage timelines",
+        "Ensure quality and correctness",
+      ],
+    },
+    {
+      id: "Q12",
+      text: "Which Math subject is/was your favorite?",
+      options: [
+        "Not applicable (N/A)",
+        "Calculus, Algebra, Differential Equations",
+        "Statistics, Probability, Financial Math",
+        "Modeling biological/physical systems",
+      ],
+    },
+    {
+      id: "Q13",
+      text: "Which part of Physics interests you most?",
+      options: [
+        "Advanced programming and digital systems",
+        "Simple machines and structures",
+        "Not applicable (N/A)",
+        "Optics and Medical Imaging",
+      ],
+    },
+    {
+      id: "Q14",
+      text: "Which area of Biology interests you most?",
+      options: [
+        "Human anatomy and disease diagnosis",
+        "Not applicable (N/A)",
+        "Bio-economic impact and health policy",
+        "Genetic modification and lab experiments",
+      ],
+    },
+    {
+      id: "Q15",
+      text: "Which sounds more appealing?",
+      options: [
+        "Writing a program to automate tasks",
+        "Designing a robot or machine",
+        "Not applicable (N/A)",
+        "Developing a drug or vaccine",
+      ],
+    },
+    {
+      id: "Q16",
+      text: "You prefer to work on problems related to:",
+      options: [
+        "Human–technology interaction",
+        "Large-scale infrastructure",
+        "Financial markets and trade",
+        "Cells, genes, molecules",
+      ],
+    },
+    {
+      id: "Q17",
+      text: "Which future field do you read about most?",
+      options: [
+        "Virtual/Augmented Reality",
+        "Self-driving cars and automation",
+        "Fintech and e-commerce",
+        "Personalized medicine",
+      ],
+    },
+    {
+      id: "Q18",
+      text: "Your peers would describe you as:",
+      options: [
+        "Creative and expressive",
+        "Logical and practical",
+        "Organized and persuasive",
+        "Caring and detail-oriented",
+      ],
+    },
+    {
+      id: "Q19",
+      text: "After 10th, I would be happy to drop:",
+      options: [
+        "Science and Math",
+        "Arts and Commerce",
+        "Arts and Science",
+        "Pure Math",
+      ],
+    },
+    {
+      id: "Q20",
+      text: "You are primarily motivated by:",
+      options: [
+        "Recognition for original ideas",
+        "Solving difficult technical challenges",
+        "Financial success and stability",
+        "Helping and caring for others",
+      ],
+    },
+  ];
 
-    if (typeof nextNode === "string") {
-      // Leaf node -> Finish
-      const totalDuration = ((endTime - totalStartTime) / 1000).toFixed(2);
-      setFinalRecommendation({
-        recommendation: [nextNode],
-        times: [...answerTimes, elapsed],
-        total: totalDuration,
-      });
-    } else {
-      // Continue to next question
-      setCurrentNode(nextNode);
-      setQuestionStart(Date.now());
+  /* =======================
+     STATE
+     ======================= */
+
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [confirm, setConfirm] = useState(false);
+  const [finalResult, setFinalResult] = useState(null);
+  const [finalText, setFinalText] = useState(null);
+
+  /* =======================
+     ANSWER HANDLER
+     ======================= */
+
+  const handleAnswer = (choiceIndex) => {
+    const letter = ["A", "B", "C", "D"][choiceIndex];
+    const qid = questions[index].id;
+
+    setAnswers({ ...answers, [qid]: letter });
+
+    if (index < questions.length - 1) {
+      setIndex(index + 1);
     }
   };
 
-  if (!questionTree) {
-    return <div className="p-8 text-lg">⏳ Loading questionnaire...</div>;
-  }
+  /* =======================
+     FINAL SUBMIT
+     ======================= */
 
-  if (finalRecommendation) {
-    // No backend: simply log the recommendation and allow user to continue
-    console.log("Local final recommendation:", finalRecommendation);
-  }
+  const handleFinalSubmit = async () => {
+    const payload = {
+      prompt_id: "CAREER_GUIDANCE_V4_DOMAIN_FILTERED",
+      prompt: `You are a professional career guidance analyzer. Strictly adhere to the following steps and output format using ONLY the provided 'student_data' and the analysis key (A: Creative, B: Technical/Mechanical/Structured, C: Commerce/Finance/Management, D: Biological/Medical/Research):\n\n1. Tally the student's 'answers' (Q1-Q20) into the four clusters (A, B, C, D). Note Q14 and Q19 should be ignored if 'N/A' is used.\n\n2. Determine the *dominant cluster* (highest count).
+      
+      
+      \n\n3. *CRITICAL STEP: Filter Outcome Recommendations.* 
   
-  if (finalRecommendation) {
+      Select FIVE if standard 12th or THREE if standard 10th specializations for the 'final_outcome_recommendation' 
+      from the 12th-grade list (['mech', 'civil', 'comp', 'aids', 'aiml', 'it', 'robotics', 'biomedical', 'biotechnology', 'cardiologist', 'mbbs', 'bba', 'bcom', 'chartered_accountant', 'law', 'fashion_design', 'animation']) if student is of class 12th else 
+      from the 10th grade-list (['comp','Bio','Arts','Commerce','cultural sciences']). 
+      
+      The chosen fields *MUST* align with the dominant cluster *AND* be feasible based on the student's 'current_stream' as follows:\n    * *If current_stream is 'N/A' then the student has just completed class 10th grade so all the 10th grade-list is valid while if calss 12th then 'Science (PCM)' or 'Science (PCMB)':* All technical (B), creative (A), and limited science (D - focusing on B/D hybrids like Biomedical/Biotech) fields are valid. Pure Medical/Biological (like MBBS, Cardiologist, B.Sc. Pure Bio) are *ONLY* valid if PCMB stream is confirmed.\n    * *If current_stream is 'Commerce':* Only fields C and A (Business Law, Finance, Design Management) are valid.\n    * *If current_stream is 'Arts/Humanities':* Only fields A and C (Law, Design, Management) are valid.
+      
+      \n\n4. OUTPUT FORMAT (MANDATORY — NO DEVIATION ALLOWED)
+Return ONLY valid JSON.
+Do NOT include markdown, explanations, comments, or extra keys.
+Do NOT rename any keys.
+Do NOT nest or restructure objects differently.
+
+The output MUST follow this EXACT schema:
+
+{
+  "student_id": "string",
+  "tallied_answers": {
+    "A": number,
+    "B": number,
+    "C": number,
+    "D": number
+  },
+  "dominant_cluster_analysis": {
+    "type": "A | B | C | D",
+    "count": number,
+    "description": "string"
+  },
+  "final_outcome_recommendation": [
+    {
+      "type": "A | B | C | D | A/C | C/A | B/D",
+      "field": "string (must be from the allowed list)",
+      "description": "string"
+    }
+  ],
+  "justification": "string"
+}
+
+If you cannot comply with the schema, return an empty JSON object {}.`,
+
+      student_data: {
+        student_id: "STU1001",
+        student_grade: "12th",
+        current_stream: "Science (PCMB)",
+        answers,
+      },
+    };
+
+    console.log("Payload to Gemini:", payload);
+
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: JSON.stringify(payload, null, 2),
+              },
+            ],
+          },
+        ],
+      });
+
+      // SDK gives you a clean accessor
+      const rawText = response.text;
+
+      // Gemini often returns JSON as text → hard parse
+      let parsed;
+      try {
+        // 1️⃣ Normalize text (remove BOM / invisible chars)
+        const cleaned = rawText
+          .replace(/^\uFEFF/, "")                 // remove BOM
+          .replace(/```json|```/g, "")             // remove markdown fences
+          .trim();
+
+        // 2️⃣ Extract first valid JSON object
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+
+        if (!jsonMatch) {
+          throw new Error("No JSON object found in Gemini response");
+        }
+
+        // 3️⃣ Parse safely
+        parsed = JSON.parse(jsonMatch[0]);
+
+      } catch (err) {
+        console.error("❌ Invalid JSON from Gemini");
+        console.error("Reason:", err.message);
+        console.log("🔍 Raw Gemini text:", rawText);
+        return;
+      }
+      console.log("✅ Parsed Gemini response:", parsed);
+      setFinalResult(parsed);
+    } catch (err) {
+      console.error("Gemini error:", err);
+      setFinalText("Unable to generate career analysis at this time.");
+    }
+  };
+
+  /* =======================
+     FINAL RESULT SCREEN
+     ======================= */
+
+  if (finalResult) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white shadow-xl rounded-xl p-8 max-w-lg text-center">
-          <h2 className="text-2xl font-bold text-green-700 mb-4">🎉 Quiz Completed</h2>
-          <p className="text-lg mb-3">
-            ✅ Final Recommendation:{" "}
-            <span className="font-bold text-blue-600">{finalRecommendation.recommendation}</span>
-          </p>
-          <button
-            onClick={() => navigate("/courses")}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-          >
-            Explore my Courses
-          </button>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+        <div className="bg-white p-8 rounded-xl shadow-xl max-w-4xl w-full space-y-8">
+
+          {/* Header */}
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-green-700">
+              Career Aptitude Analysis
+            </h2>
+            <p className="text-gray-500 mt-1">
+              Student ID:{" "}
+              <span className="font-semibold">
+                {finalResult.student_id}
+              </span>
+            </p>
+          </div>
+
+          {/* Dominant Cluster */}
+          <div className="bg-green-50 border-l-4 border-green-600 p-5 rounded">
+            <h3 className="font-semibold mb-1">Dominant Cluster</h3>
+            <p className="text-gray-700">
+              Cluster{" "}
+              <span className="font-bold text-green-700 text-lg">
+                {finalResult.dominant_cluster_analysis.type}
+              </span>{" "}
+              with{" "}
+              <span className="font-bold">
+                {finalResult.dominant_cluster_analysis.count}
+              </span>{" "}
+              responses
+            </p>
+          </div>
+
+          {/* Recommendations */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">
+              Recommended Career Paths
+            </h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              {finalResult.final_outcome_recommendation.map((rec, i) => (
+                <div
+                  key={i}
+                  className="border rounded-lg p-5 hover:shadow-md transition"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-bold text-blue-700 capitalize">
+                      {rec.field.replace(/_/g, " ")}
+                    </h4>
+                    <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
+                      {rec.type}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {rec.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Justification */}
+          <div className="bg-gray-100 p-5 rounded-lg">
+            <h3 className="font-semibold mb-2">Why these were chosen</h3>
+            <p className="text-gray-700 text-sm leading-relaxed">
+              {finalResult.justification}
+            </p>
+          </div>
+
+          {/* CTA */}
+          <div className="text-center">
+            <button
+              onClick={() => navigate("/courses")}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+            >
+              Explore Courses
+            </button>
+          </div>
+
         </div>
       </div>
     );
   }
 
-  // Current question
-  const questionKey = Object.keys(currentNode).find((k) => k !== "Options");
-  const question = currentNode[questionKey];
-  const options = Object.keys(currentNode.Options || {});
+
+
+  /* =======================
+     QUESTION SCREEN
+     ======================= */
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      <main className="flex-1 px-8 py-6 flex items-center justify-center">
-        <div className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-8">
-          <h2 className="text-2xl font-bold mb-6 text-center">{question}</h2>
-          <div className="space-y-4">
-            {options.map((opt, i) => (
-              <button
-                key={i}
-                onClick={() => handleChoice(opt)}
-                className="w-full bg-blue-100 text-blue-800 font-semibold py-3 px-4 rounded-lg hover:bg-blue-200 transition"
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white p-8 rounded-xl shadow-xl max-w-2xl w-full">
+        <h2 className="text-sm text-gray-500 mb-2">
+          Question {index + 1} / {questions.length}
+        </h2>
+        <h1 className="text-xl font-bold mb-6">{questions[index].text}</h1>
+
+        <div className="space-y-4">
+          {questions[index].options.map((opt, i) => (
+            <button
+              key={i}
+              onClick={() => handleAnswer(i)}
+              className="w-full bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-3 rounded-lg"
+            >
+              {opt}
+            </button>
+          ))}
         </div>
-      </main>
+
+        {index === questions.length - 1 && (
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setConfirm(true)}
+              className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold"
+            >
+              Submit Test
+            </button>
+          </div>
+        )}
+
+        {confirm && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+            <div className="bg-white p-6 rounded-xl text-center">
+              <p className="mb-4">Confirm submission?</p>
+              <div className="flex gap-4 justify-center">
+                <button onClick={() => setConfirm(false)}>Cancel</button>
+                <button onClick={handleFinalSubmit} className="bg-blue-600 text-white px-4 py-2 rounded">
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 export default AptitudeTest;
-
