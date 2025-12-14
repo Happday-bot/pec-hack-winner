@@ -52,10 +52,6 @@ export default function ProfileSetupBasic({ initialData }) {
       last_name: form.lastName,
       dob: form.dob,
       phone: form.phone,
-      address: form.address,
-      city: form.city,
-      state: form.state,
-      pincode: form.pincode,
       qualification: form.qualification,
       gender: form.gender,
       stream: form.Stream
@@ -94,22 +90,6 @@ export default function ProfileSetupBasic({ initialData }) {
             <Input label="First Name *" name="firstName" value={form.firstName} onChange={handleChange} required />
             <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} />
             <Input label="Last Name *" name="lastName" value={form.lastName} onChange={handleChange} required />
-
-            <div className="flex flex-col">
-              <label>Address *</label>
-              <textarea
-                name="address"
-                value={form.address}
-                onChange={handleChange}
-                className="border rounded-lg p-2"
-                rows={2}
-                required
-              />
-            </div>
-
-            <Input label="City *" name="city" value={form.city} onChange={handleChange} required />
-            <Input label="State *" name="state" value={form.state} onChange={handleChange} required />
-            <Input label="Pincode *" name="pincode" value={form.pincode} onChange={handleChange} required />
           </div>
 
           {/* RIGHT COLUMN */}

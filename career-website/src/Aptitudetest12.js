@@ -9,7 +9,7 @@ import { supabase } from "./supabase";
 const AptitudeTest = () => {
   const navigate = useNavigate();
   const ai = new GoogleGenAI({
-    apiKey: "AIzaSyC8U77n1qquJcpian5bMpEtnokkbQe8OAk", // explicitly added as requested
+    apiKey: "AIzaSyDKCXPAegphQzUEGR8kt_3dmTur1R_aUvQ", // explicitly added as requested
   });
 
   const [index, setIndex] = useState(0);
@@ -139,8 +139,7 @@ If you cannot comply with the schema, return an empty JSON object {}.`,
 
     try {
       const response = await ai.models.generateContent({
-        // model: "gemini-2.5-flash",
-        model: "gemini-1.5-flash",
+        model: "gemini-2.5-flash",
         contents: [
           {
             role: "user",
