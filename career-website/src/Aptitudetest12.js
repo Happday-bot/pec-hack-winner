@@ -159,10 +159,10 @@ If you cannot comply with the schema, return an empty JSON object {}.`,
       // Gemini often returns JSON as text → hard parse
       let parsed;
       try {
-        // 1️⃣ Normalize text (remove BOM / invisible chars)
+        // 1️⃣ Clean unwanted characters
         const cleaned = rawText
-          .replace(/^\uFEFF/, "")                 // remove BOM
-          .replace(/```json|```/g, "")             // remove markdown fences
+          .replace(/```json|```/g, "")
+          .replace(/[^\x20-\x7E]/g, "") // ⬅️ THIS LINE FIXES IT
           .trim();
 
         // 2️⃣ Extract first valid JSON object

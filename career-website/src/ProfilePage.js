@@ -1,168 +1,193 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import ProfileSetupBasic from "./ProfileSetupBasic";
+import ProfileSetup10th from "./ProfileSetup10th";
+import ProfileSetup12th from "./ProfileSetup12th";
+import { supabase } from "./supabase";
 
-export default function ProfileView() {
-  // Local dummy profile data (replaces backend)
-  const sampleProfile = {
-    name: "John Doe",
-    email: "john@example.com",
-    qualification: "12",
-    stream: "Science",
-    income: "500000",
-    interests: ["Mathematics", "Physics"],
-    ambition: "Software Engineer",
-    dob: "2006-01-15",
+export default function ProfileSettings() {
+  const [qualification, setQualification] = useState("12");
+  const [editSection, setEditSection] = useState(null);
+
+  const [basicDone, setBasicDone] = useState(false);
+  const [tenthDone, setTenthDone] = useState(false);
+  const [twelfthDone, setTwelfthDone] = useState(false);
+  const [basicProfile, setBasicProfile] = useState(null);
+
+
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("email", "alfredsam2006@gmail.com")
+        .single();
+
+      if (error) {
+        console.warn("No basic profile found in Supabase");
+        setBasicDone(false);
+        return;
+      }
+
+      // Map Supabase row → ProfileSetupBasic expected shape
+      const mappedBasic = {
+        firstName: data.first_name,
+        middleName: data.middle_name,
+        lastName: data.last_name,
+        fullName: data.fullname,
+        email: data.email,
+        phone: data.phone,
+        gender: data.gender,
+        dob: data.dob,
+        qualification: data.qualification,
+        stream: data.stream || null
+      };
+
+      setBasicProfile(mappedBasic);
+      setBasicDone(true);
+
+      // Sync qualification globally
+      if (data.qualification) {
+        sessionStorage.setItem("qualification", data.qualification);
+        setQualification(data.qualification);
+      }
+
+      console.log("Supabase Basic Profile:", mappedBasic);
+    };
+
+    fetchProfile();
+  }, []);
+
+
+  // ---------- STRICT 10TH CHECK ----------
+  const is10thComplete = () => {
+    const raw = sessionStorage.getItem("profile10th");
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+
+    if (!d.medium || !d.compulsoryLanguage || !d.interest || !d.ambition) return false;
+    if (!d.marks) return false;
+
+    for (const key in d.marks) {
+      if (!d.marks[key]) return false;
+    }
+    return true;
   };
 
-  const [profile, setProfile] = useState(sampleProfile);
-  const [editMode, setEditMode] = useState(false);
-  const [form, setForm] = useState(sampleProfile);
-  const navigate = useNavigate();
+  // ---------- STRICT 12TH CHECK ----------
+  const is12thComplete = () => {
+    const raw = sessionStorage.getItem("profile12th");
+    if (!raw) return false;
+    const d = JSON.parse(raw);
 
-  // Handle input change
-  const handleChange = (e) => {
-    let value = e.target.value;
+    if (!d.medium || !d.compulsoryLanguage || !d.stream || !d.interests || !d.ambition)
+      return false;
 
-    // Convert comma separated values to array
-    if (Array.isArray(form[e.target.name])) {
-      value = e.target.value.split(",").map((x) => x.trim());
+    if (!Array.isArray(d.selectedSubjects) || d.selectedSubjects.length === 0)
+      return false;
+
+    for (const s of d.selectedSubjects) {
+      if (!s.name || !s.marks) return false;
     }
 
-    setForm({ ...form, [e.target.name]: value });
+    if ((d.stream === "PCM" || d.stream === "PCMB") && (!d.cutoff || d.cutoff <= 0))
+      return false;
+
+    return true;
   };
 
-  const handleBack = () => {
-    navigate("/dashboard");
-  };
+  // ---------- SYNC QUALIFICATION SAFELY ----------
+  useEffect(() => {
+    const basicRaw = sessionStorage.getItem("profileBasic");
+    const basic = basicRaw ? JSON.parse(basicRaw) : null;
 
-  // Save profile (local only, no backend)
-  const handleSave = () => {
-    setProfile(form);
-    setEditMode(false);
-    console.log("Profile updated locally:", form);
-  };
-
-  // UI rendering (no loading state needed with local data)
-  if (!profile) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <p className="text-gray-500">No profile found.</p>
-      </div>
-    );
-  }
-
-  // Build profile display
-  const profileDetails = [];
-  Object.keys(profile).forEach((key) => {
-    let value = profile[key];
-
-    // Format qualification
-    if (key === "qualification") {
-      value = value === "10" ? "10th" : value === "12" ? "12th" : value;
+    if (basic?.qualification) {
+      sessionStorage.setItem("qualification", basic.qualification);
+      setQualification(basic.qualification);
+    } else {
+      setQualification(sessionStorage.getItem("qualification") || "12");
     }
 
-    // Format income
-    if (key === "income") {
-      value = `₹${Number(value).toLocaleString()}`;
-    }
-
-    // Format arrays
-    if (Array.isArray(value)) {
-      value = value.join(", ");
-    }
-
-    // Format objects
-    if (value && typeof value === "object" && !Array.isArray(value)) {
-      value = JSON.stringify(value, null, 2);
-    }
-
-    const label = key
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (str) => str.toUpperCase());
-
-    profileDetails.push(
-      <div key={key}>
-        <strong>{label}: </strong> {value}
-      </div>
-    );
-  });
+    setBasicDone(!!basicRaw);
+    setTenthDone(is10thComplete());
+    setTwelfthDone(is12thComplete());
+  }, []);
 
   return (
-    <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-xl p-8 mt-10">
-      <h1 className="text-2xl font-bold mb-6 text-center">My Profile</h1>
+    <div className="max-w-5xl mx-auto mt-10">
+      <h2 className="text-xl font-bold mb-4">Profile Setup Status</h2>
 
-      {editMode ? (
-        <form className="space-y-4">
-          {Object.keys(form).map((key) => {
-            const label = key
-              .replace(/([A-Z])/g, " $1")
-              .replace(/^./, (str) => str.toUpperCase());
+      <Section
+        title="Profile Setup – Basic"
+        done={basicDone}
+        onClick={() => setEditSection(editSection === "basic" ? null : "basic")}
+      />
 
-            const isArray = Array.isArray(form[key]);
-            const type =
-              key === "dob" ? "date" : key === "income" ? "number" : "text";
+      {editSection === "basic" && (
+        <ProfileSetupBasic
+          initialData={basicProfile}
+          onComplete={() => {
+            setBasicDone(true);
+            setEditSection(null);
+          }}
+        />
 
-            return (
-              <div key={key}>
-                <label className="font-semibold text-gray-700">{label}</label>
-                <input
-                  type={type}
-                  name={key}
-                  value={
-                    isArray ? form[key].join(", ") : form[key] || ""
-                  }
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded-lg mt-1"
-                />
-              </div>
-            );
-          })}
+      )}
 
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={handleSave}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              Save
-            </button>
+      {/* ---------- 10TH ---------- */}
+      {qualification === "10" && (
+        <>
+          <Section
+            title="Profile Setup – 10th"
+            done={tenthDone}
+            onClick={() => setEditSection(editSection === "10th" ? null : "10th")}
+          />
 
-            <button
-              type="button"
-              onClick={() => setEditMode(false)}
-              className="px-6 py-2 bg-gray-300 rounded-lg"
-            >
-              Cancel
-            </button>
+          {editSection === "10th" && (
+            <ProfileSetup10th
+              initialData={
+                tenthDone ? JSON.parse(sessionStorage.getItem("profile10th")) : null
+              }
+              onComplete={() => {
+                setTenthDone(true);
+                setEditSection(null);
+              }}
+            />
+          )}
+        </>
+      )}
 
-            <button
-              type="button"
-              onClick={handleBack}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg"
-            >
-              Back
-            </button>
-          </div>
-        </form>
-      ) : (
-        <div>
-          <div className="space-y-4">{profileDetails}</div>
+      {/* ---------- 12TH ---------- */}
+      {qualification === "12" && (
+        <>
+          <Section
+            title="Profile Setup – 12th"
+            done={twelfthDone}
+            onClick={() => setEditSection(editSection === "12th" ? null : "12th")}
+          />
 
-          <button
-            onClick={() => setEditMode(true)}
-            className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Edit Profile
-          </button>
-
-          <button
-            onClick={handleBack}
-            className="ml-4 mt-6 px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
-          >
-            Back
-          </button>
-        </div>
+          {editSection === "12th" && (
+            <ProfileSetup12th
+              initialData={
+                twelfthDone ? JSON.parse(sessionStorage.getItem("profile12th")) : null
+              }
+              onComplete={() => {
+                setTwelfthDone(true);
+                setEditSection(null);
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );
 }
+
+const Section = ({ title, done, onClick }) => (
+  <div className="flex justify-between items-center mb-3">
+    <span>{done ? "✔" : "🔒"} {title}</span>
+    <button onClick={onClick} className="text-blue-600 font-semibold">
+      {done ? "View / Edit" : "Complete Now"}
+    </button>
+  </div>
+);
