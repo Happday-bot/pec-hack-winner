@@ -57,7 +57,8 @@ export default function ProfileSetupBasic({ initialData, Email }) {
       gender: form.gender,
       stream: form.Stream
     };
-
+    sessionStorage.setItem("qualification",form.qualification)
+    sessionStorage.setItem("stream",form.Stream)
     const { error } = await supabase
       .from("profiles")
       .update(payload)

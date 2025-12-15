@@ -9,7 +9,7 @@ import { supabase } from "./supabase";
 const AptitudeTest = () => {
   const navigate = useNavigate();
   const ai = new GoogleGenAI({
-    apiKey: "dummy not to be exposed", // do not push this api key to the repository
+    apiKey: "dummy api key", // do not push this api key to the repository
   });
 
   const [index, setIndex] = useState(0);
@@ -103,7 +103,6 @@ Do NOT nest or restructure objects differently.
 The output MUST follow this EXACT schema:
 
 {
-  "student_id": "string",
   "tallied_answers": {
     "A": number,
     "B": number,
@@ -128,9 +127,8 @@ The output MUST follow this EXACT schema:
 If you cannot comply with the schema, return an empty JSON object {}.`,
 
       student_data: {
-        student_id: "STU1001",
-        student_grade: "12th",
-        current_stream: "Science (PCMB)",
+        student_grade: sessionStorage.getItem("qualification"),
+        current_stream: sessionStorage.getItem("stream")|| "N/A",
         answers,
       },
     };
@@ -188,14 +186,14 @@ If you cannot comply with the schema, return an empty JSON object {}.`,
       );
       const { error } = await supabase
         .from("interest")
-        .insert([
+        .upsert(
           {
-            student_id: parsed.student_id,
+            student_id: sessionStorage.getItem("userEmail"),
             interest: {
               recommended_fields: interests,
             },
-          },
-        ]);
+          },{ onConflict: "student_id" }
+        );
 
       if (error) {
         console.error("❌ Supabase insert failed:", error.message);
@@ -223,14 +221,8 @@ If you cannot comply with the schema, return an empty JSON object {}.`,
             <h2 className="text-2xl font-bold text-green-700">
               Career Aptitude Analysis
             </h2>
-            <p className="text-gray-500 mt-1">
-              Student ID:{" "}
-              <span className="font-semibold">
-                {finalResult.student_id}
-              </span>
-            </p>
+            
           </div>
-
           {/* Dominant Cluster */}
           <div className="bg-green-50 border-l-4 border-green-600 p-5 rounded">
             <h3 className="font-semibold mb-1">Dominant Cluster</h3>
@@ -285,7 +277,10 @@ If you cannot comply with the schema, return an empty JSON object {}.`,
           {/* CTA */}
           <div className="text-center">
             <button
-              onClick={() => navigate("/courses")}
+              onClick={() => {
+                sessionStorage.setItem("aptitudeDone",true) 
+                navigate("/courses")
+              }}
               className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
             >
               Explore Courses

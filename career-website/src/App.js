@@ -53,6 +53,7 @@ function Navbar({ onLogout }) {
   ];
 
   return (
+    
     <nav className="backdrop-blur-md bg-white/80 shadow-sm border-b border-gray-200 flex items-center justify-between px-8 py-4 sticky top-0 z-50">
       {/* Left Navigation Items */}
       <div className="flex items-center justify-between w-[55%]">
@@ -182,7 +183,7 @@ function App() {
 
   return (
     <>
-      {showNavbar && <Navbar onLogout={handleLogout} />}
+      {showNavbar && location.pathname !== "/test" && <Navbar onLogout={handleLogout} />}
 
       <Routes>
         {/* Public Pages */}
