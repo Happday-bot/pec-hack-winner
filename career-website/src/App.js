@@ -148,16 +148,17 @@ function PrivateRoute({ isAuthenticated, children }) {
 function App() {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(
-    () => localStorage.getItem("isAuthenticated") === "true"
+    () => sessionStorage.getItem("isAuthenticated") === "true"
   );
 
   const handleLogin = () => {
-    localStorage.setItem("isAuthenticated", "true");
+    sessionStorage.setItem("isAuthenticated", "true");
     setIsAuthenticated(true);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
+    sessionStorage.removeItem("isAuthenticated");
+    sessionStorage.clear();
     setIsAuthenticated(false);
   };
 
@@ -201,12 +202,7 @@ function App() {
           element={
             <AptitudeLanding
               onStartTest={() => {
-                const qualification = localStorage.getItem("qualification");
-                if (qualification === "10") {
-                  window.location.href = "/test1";
-                } else {
                   window.location.href = "/test";
-                }
               }}
             />
           }

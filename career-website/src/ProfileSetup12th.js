@@ -178,7 +178,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 
-export default function ProfileSetup12th({ onComplete, initialData, email }) {
+export default function ProfileSetup12th({ onComplete, initialData, email, complete }) {
   console.log("ProfileSetup12th initialData:", initialData);
 
   const allSubjects = [
@@ -283,6 +283,7 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
     }
 
     if (onComplete) onComplete(finalData);
+    if (onComplete) complete();
     alert("✅ 12th profile saved successfully!");
   };
 

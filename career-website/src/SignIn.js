@@ -53,8 +53,9 @@ function SignIn({ onLogin }) {
       console.log("Logged in user profile:", profileData);
 
       // 3️⃣ Set local storage / state
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userName", profileData?.fullname || "User");
+      sessionStorage.setItem("isAuthenticated", "true");
+      sessionStorage.setItem("userName", profileData?.fullname || "User");
+      sessionStorage.setItem("userEmail", data.user.email);
       console.log("User logged in:", profileData?.fullname);
 
       onLogin?.(); // callback if any

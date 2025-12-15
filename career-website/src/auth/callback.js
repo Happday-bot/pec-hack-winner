@@ -20,11 +20,11 @@ export default function AuthCallback() {
           refresh_token,
         });
 
-        localStorage.setItem("supabase_session", JSON.stringify({
+        sessionStorage.setItem("supabase_session", JSON.stringify({
           access_token,
           refresh_token,
         }));
-        localStorage.setItem("isAuthenticated", "true");
+        sessionStorage.setItem("isAuthenticated", "true");
 
         // Redirect to profile setup
         navigate("/profile-setup-basic");

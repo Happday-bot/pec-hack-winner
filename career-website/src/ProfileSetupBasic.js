@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabase"; // adjust path
 
-export default function ProfileSetupBasic({ initialData }) {
+export default function ProfileSetupBasic({ initialData, Email }) {
   const navigate = useNavigate();
 
   // ---------- EMPTY STRUCTURE ----------
@@ -38,7 +38,8 @@ export default function ProfileSetupBasic({ initialData }) {
   };
 
   const handleNext = async (e) => {
-    const email = sessionStorage.getItem("signUpEmail");
+    // const email = sessionStorage.getItem("signUpEmail");
+    const email = Email || sessionStorage.getItem("signedUpEmail")
     if (!email) {
       alert("Session expired. Please sign up again.");
       return;
