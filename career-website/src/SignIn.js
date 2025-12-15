@@ -203,6 +203,7 @@ function SignIn({ onLogin }) {
             sessionStorage.setItem("isAuthenticated", "true");
             sessionStorage.setItem("userName", profileData?.fullname || "User");
             sessionStorage.setItem("userEmail", data.user.email);
+            sessionStorage.setItem("qualification", profileData?.qualification);
             console.log("User logged in:", profileData?.fullname);
 
             onLogin?.();

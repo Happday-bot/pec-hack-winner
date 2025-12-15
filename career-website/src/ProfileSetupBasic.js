@@ -39,7 +39,6 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
   };
 
   const handleNext = async (e) => {
-    // const email = sessionStorage.getItem("signUpEmail");
     console.log("Email prop:", Email);
     console.log("Session email:", sessionStorage.getItem("signUpEmail"));
     const email = Email || sessionStorage.getItem("signUpEmail")
