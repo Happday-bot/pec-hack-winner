@@ -184,11 +184,13 @@ If you cannot comply with the schema, return an empty JSON object {}.`,
       const interests = parsed.final_outcome_recommendation.map(
         (rec) => rec.field
       );
+
+      const email = sessionStorage.getItem("userEmail") || sessionStorage.getItem("signUpEmail");
       const { error } = await supabase
         .from("interest")
         .upsert(
           {
-            student_id: sessionStorage.getItem("userEmail"),
+            student_id: email,
             interest: {
               recommended_fields: interests,
             },

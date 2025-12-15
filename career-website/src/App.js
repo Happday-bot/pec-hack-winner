@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import {
   BrowserRouter as Router,
@@ -55,7 +55,7 @@ function Navbar({ onLogout }) {
   ];
 
   return (
-    
+
     <nav className="backdrop-blur-md bg-white/80 shadow-sm border-b border-gray-200 flex items-center justify-between px-8 py-4 sticky top-0 z-50">
       {/* Left Navigation Items */}
       <div className="flex items-center justify-between w-[55%]">
@@ -77,7 +77,7 @@ function Navbar({ onLogout }) {
       <div className="flex items-center space-x-4 relative">
         {/* Aptitude Test Button */}
         <button
-          onClick={() => () => navigate("/aptitude-landing")}
+          onClick={() => navigate("/aptitude-landing")}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition"
         >
           Aptitude Test
@@ -152,6 +152,14 @@ function App() {
     () => sessionStorage.getItem("isAuthenticated") === "true"
   );
 
+  useEffect(() => {
+    const storedAuth = sessionStorage.getItem("isAuthenticated");
+    if (storedAuth === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+
   const handleLogin = () => {
     sessionStorage.setItem("isAuthenticated", "true");
     setIsAuthenticated(true);
@@ -201,7 +209,7 @@ function App() {
         <Route
           path="/aptitude-landing"
           element={
-            <AptitudeLanding/>
+            <AptitudeLanding />
           }
         />
 
