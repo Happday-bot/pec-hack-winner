@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,6 +7,7 @@ import {
   Link,
   useLocation,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
 import { Bell, User } from "lucide-react";
 
@@ -41,7 +43,7 @@ import AuthCallback from "./auth/callback";
 function Navbar({ onLogout }) {
   const location = useLocation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
+  const navigate = useNavigate();
   const navItems = [
     { to: "/dashboard", label: "Dashboard" },
     { to: "/courses", label: "Courses" },
@@ -75,9 +77,7 @@ function Navbar({ onLogout }) {
       <div className="flex items-center space-x-4 relative">
         {/* Aptitude Test Button */}
         <button
-          onClick={() => {
-            window.location.href = "/aptitude-landing";
-          }}
+          onClick={() => () => navigate("/aptitude-landing")}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition"
         >
           Aptitude Test
@@ -201,11 +201,7 @@ function App() {
         <Route
           path="/aptitude-landing"
           element={
-            <AptitudeLanding
-              onStartTest={() => {
-                  window.location.href = "/test";
-              }}
-            />
+            <AptitudeLanding/>
           }
         />
 

@@ -255,7 +255,7 @@ import ProfileSetup12th from "./ProfileSetup12th";
 import { supabase } from "./supabase";
 
 console.log(sessionStorage.getItem("userEmail"));
-const EMAIL = sessionStorage.getItem("userEmail") || sessionStorage.getItem("signedUpEmail")
+const EMAIL = sessionStorage.getItem("userEmail") || sessionStorage.getItem("signUpEmail")
 
 export default function ProfileSettings() {
   const [qualification, setQualification] = useState(null);
