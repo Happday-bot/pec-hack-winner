@@ -4,6 +4,7 @@ import { supabase } from "./supabase"; // adjust path
 
 export default function ProfileSetupBasic({ initialData, Email = null }) {
   const navigate = useNavigate();
+  
 
   // ---------- EMPTY STRUCTURE ----------
   const emptyForm = {
@@ -72,6 +73,7 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
       return;
     }
 
+    
     // 👉 Continue flow (unchanged)
     navigate("/aptitude-landing", {
       state: { qualification: form.qualification }

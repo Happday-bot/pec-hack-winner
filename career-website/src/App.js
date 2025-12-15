@@ -152,12 +152,12 @@ function App() {
     () => sessionStorage.getItem("isAuthenticated") === "true"
   );
 
-  useEffect(() => {
-    const storedAuth = sessionStorage.getItem("isAuthenticated");
-    if (storedAuth === "true") {
-      setIsAuthenticated(true);
-    }
-  }, []);
+  // useEffect(() => {
+  //   const storedAuth = sessionStorage.getItem("isAuthenticated");
+  //   if (storedAuth === "true") {
+  //     setIsAuthenticated(true);
+  //   }
+  // }, []);
 
 
   const handleLogin = () => {

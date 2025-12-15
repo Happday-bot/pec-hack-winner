@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
 
-function SignUp() {
+function SignUp({onSignup}) {
     const [form, setForm] = useState({
         name: "",
         email: "",
@@ -101,7 +101,7 @@ function SignUp() {
             setLoading(false);
             return;
         }
-
+        onSignup?.();
         navigate("/profile-setup-basic");
         setLoading(false);
     };
