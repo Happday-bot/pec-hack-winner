@@ -1,9 +1,57 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Award } from "lucide-react";
 import gsap from "gsap";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "./supabase";
+
 
 export default function Examinations() {
   const heroRef = useRef(null);
+    const navigate = useNavigate();
+
+
+  const [canAccess, setCanAccess] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [qualification, setQualification] = useState(null);
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      const rawQualification = sessionStorage.getItem("qualification");
+
+      const normalized =
+        rawQualification === "10" || rawQualification === "10th"
+          ? "10"
+          : rawQualification === "12" || rawQualification === "12th"
+          ? "12"
+          : null;
+
+      setQualification(normalized);
+
+      const email =
+        sessionStorage.getItem("userEmail") ||
+        sessionStorage.getItem("signUpEmail");
+
+      if (!normalized || !email) {
+        setCanAccess(false);
+        setChecking(false);
+        return;
+      }
+
+      const table =
+        normalized === "10" ? "10th_profile_data" : "12th_profile_data";
+
+      const { data } = await supabase
+        .from(table)
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      setCanAccess(!!data);
+      setChecking(false);
+    };
+
+    checkAccess();
+  }, []);
 
   const sampleExams = [
     {
@@ -56,14 +104,65 @@ export default function Examinations() {
     return nameMatch && domainMatch;
   });
 
+
   useEffect(() => {
     if (heroRef.current) {
-      gsap.fromTo(heroRef.current, { opacity: 0, y: -50 }, { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" });
-      gsap.to(".floating-shape", { y: "-=20", repeat: -1, yoyo: true, duration: 2, ease: "sine.inOut", stagger: 0.3 });
+      // Hero fade in
+      gsap.fromTo(
+        heroRef.current,
+        { opacity: 0, y: -50 },
+        { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }
+      );
+
+      // Floating bubbles
+      gsap.to(".floating-shape", {
+        y: "-=20",
+        repeat: -1,
+        yoyo: true,
+        duration: 2,
+        ease: "sine.inOut",
+        stagger: 0.3,
+      });
     }
+
+    
   }, []);
 
+  if (checking) return null;
+
+
   return (
+    <>
+    {/* 🔒 PROFILE INCOMPLETE OVERLAY */}
+{!canAccess && (
+  <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+    <div className="bg-white rounded-xl p-6 text-center max-w-md shadow-xl">
+      <h2 className="text-xl font-bold mb-2">Profile Incomplete</h2>
+
+      <p className="text-gray-600 mb-4">
+        Please complete your {qualification === "10" ? "10th" : "12th"} profile to view examinations.
+      </p>
+
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={() => navigate("/profile")}
+          className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition"
+        >
+          Go to Profile Setup
+        </button>
+
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="bg-gray-300 text-gray-800 px-5 py-2 rounded-lg hover:bg-gray-400 transition"
+        >
+          Back
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
     <div className="flex flex-col min-h-screen font-[Poppins]">
       {/* HEADER */}
       <header ref={heroRef} className="relative text-center py-20 bg-gradient-to-r from-indigo-600 to-blue-500 text-white shadow-lg overflow-hidden rounded-b-3xl">
@@ -178,5 +277,6 @@ export default function Examinations() {
         © 2025 Career Website. All rights reserved.
       </footer>
     </div>
+    </>
   );
 }

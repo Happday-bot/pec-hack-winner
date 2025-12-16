@@ -9,7 +9,8 @@ import { supabase } from "./supabase";
 const AptitudeTest = () => {
   const navigate = useNavigate();
   const ai = new GoogleGenAI({
-    apiKey: "dummy", // do not push this api key to the repository
+    //apiKey: "dummy", // do not push this api key to the repository
+    apiKey : "AIzaSyDnb5_dP-pDMqV2_8v2aO-_9XULzWkyxP8",
   });
 
   const [index, setIndex] = useState(0);

@@ -50,8 +50,9 @@ function Navbar({ onLogout }) {
     { to: "/careerPaths", label: "Career Paths" },
     { to: "/colleges", label: "Colleges" },
     { to: "/scholarships", label: "Scholarships" },
-    { to: "/resources", label: "Resources" },
     { to: "/exam", label: "Examinations" },
+    { to: "/resources", label: "Resources" },
+    
   ];
 
   return (

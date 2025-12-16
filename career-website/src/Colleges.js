@@ -1,55 +1,115 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Search, Sparkles } from "lucide-react";
 import gsap from "gsap";
+import { supabase } from "./supabase";
+import { useNavigate } from "react-router-dom";
+
 
 export default function Colleges() {
+
+  /* ===============================
+     🔐 ACCESS CONTROL (FINAL)
+     =============================== */
+
+  const [canAccess, setCanAccess] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [qualification, setQualification] = useState(null);
+  const navigate = useNavigate();
+
+
+  
+  useEffect(() => {
+    const checkAccess = async () => {
+      const rawQualification = sessionStorage.getItem("qualification");
+
+      const normalized =
+        rawQualification === "10" || rawQualification === "10th"
+          ? "10"
+          : rawQualification === "12" || rawQualification === "12th"
+          ? "12"
+          : null;
+
+      setQualification(normalized);
+
+      const email =
+        sessionStorage.getItem("userEmail") ||
+        sessionStorage.getItem("signUpEmail");
+
+      if (!normalized || !email) {
+        setCanAccess(false);
+        setChecking(false);
+        return;
+      }
+
+      const table =
+        normalized === "10" ? "10th_profile_data" : "12th_profile_data";
+
+      const { data } = await supabase
+        .from(table)
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      setCanAccess(!!data);
+      setChecking(false);
+    };
+
+    checkAccess();
+  }, []);
+
+  /* ===============================
+     UI STATE
+     =============================== */
+
   const heroRef = useRef(null);
   const cardsRef = useRef([]);
   const modalRef = useRef(null);
-  const [closing, setClosing] = useState(false);
+
+  const [selectedCollege, setSelectedCollege] = useState(null);
+  const [search, setSearch] = useState("");
+  const [stream, setStream] = useState("");
+  const [medium, setMedium] = useState("");
 
   cardsRef.current = [];
-
   const addToRefs = (el) => {
     if (el && !cardsRef.current.includes(el)) cardsRef.current.push(el);
   };
 
-const sampleColleges = [
-  {
-    _id: "col1",
-    name: "St. Theresa's Institute of Technology",
-    address: "123 Main St, Springfield",
-    degrees: ["B.Tech", "M.Tech"],
-    stream: "Engineering",
-    medium: "English",
-    rank: "A1",
-    type: "Private",
-    contact: ["+1-555-0100"],
-    email: ["admissions@sttheresa.edu"],
-    eligible: "JEE/Board",
-    cutoff: { jee_rank: { General: 15000 }, neet_mark: {}, board_marks: { PCB: 85 } },
-    duration: "4 years",
-    admissionMode: "Entrance",
-    admissionDate: "2026-06-01",
-    fees: "₹1,00,000 per year",
-    docs: "10th, 12th certificates",
-    hostel: "Available",
-    lab: "Well-equipped",
-    lib: "Extensive",
-    net: "Good",
-    food: "Cafeteria",
-    transport: "Buses",
-    sports: "Facilities available",
-    disable: "Yes",
-    placements: "80%",
-    career: "Software Engineer",
-    alumini: "Active",
-    clubs: "Coding Club, Robotics",
-    courses: ["Computer Science", "Information Technology"],
-    courseid: ["CS101", "IT102"],
-    rating: 4.2,
-  },
-  {
+  /* ===============================
+     MODAL CLOSE (FIX)
+     =============================== */
+  const closeModal = () => {
+    setSelectedCollege(null);
+  };
+
+  /* ===============================
+     SAMPLE DATA
+     =============================== */
+  const colleges = [
+    {
+      _id: "col1",
+      name: "St. Theresa's Institute of Technology",
+      address: "123 Main St, Springfield",
+      degrees: ["B.Tech", "M.Tech"],
+      stream: "Engineering",
+      medium: "English",
+      rank: "A1",
+      type: "Private",
+      contact: ["+1-555-0100"],
+      email: ["admissions@sttheresa.edu"],
+      eligible: "JEE/Board",
+      cutoff: { jee_rank: { General: 15000 }, neet_mark: {} },
+      duration: "4 years",
+      fees: "₹1,00,000 per year",
+      hostel: "Available",
+      lab: "Well-equipped",
+      lib: "Extensive",
+      placements: "80%",
+      career: "Software Engineer",
+      clubs: "Coding Club, Robotics",
+      rating: 4.2,
+    },
+    {
     _id: "col2",
     name: "Greenfield Medical College",
     address: "45 Health Ave, Metropolis",
@@ -219,13 +279,7 @@ const sampleColleges = [
     courseid: ["CS201", "AI301", "EC101"],
     rating: 4.7,
   }
-];
-
-  const [colleges, setColleges] = useState(sampleColleges);
-  const [selectedCollege, setSelectedCollege] = useState(null);
-  const [search, setSearch] = useState("");
-  const [stream, setStream] = useState("");
-  const [medium, setMedium] = useState("");
+  ];
 
   const filteredColleges = colleges.filter(
     (college) =>
@@ -234,68 +288,90 @@ const sampleColleges = [
       (medium === "" || college.medium === medium)
   );
 
-  useEffect(() => {
-    // Hero animation
-    gsap.fromTo(
-      heroRef.current,
-      { opacity: 0, y: -50 },
-      { opacity: 1, y: 0, duration: 1, ease: "power3.out" }
-    );
-
-    // Floating shapes
-    gsap.to(".floating-shape", {
-      y: "-=20",
-      repeat: -1,
-      yoyo: true,
-      duration: 2,
-      ease: "sine.inOut",
-      stagger: 0.3,
-    });
-  }, []);
-
-  useEffect(() => {
-    // Animate cards only once on mount
-    if (cardsRef.current.length > 0) {
+  /* ===============================
+     ANIMATION
+     =============================== */
+     useEffect(() => {
+    if (heroRef.current) {
+      // Hero fade in
       gsap.fromTo(
-        cardsRef.current,
-        { opacity: 0, y: 50 },
-        { opacity: 1, y: 0, duration: 0.8, stagger: 0.2, ease: "power3.out" }
+        heroRef.current,
+        { opacity: 0, y: -50 },
+        { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }
       );
+
+      // Floating bubbles
+      gsap.to(".floating-shape", {
+        y: "-=20",
+        repeat: -1,
+        yoyo: true,
+        duration: 2,
+        ease: "sine.inOut",
+        stagger: 0.3,
+      });
     }
+
+    
   }, []);
+ 
 
-  const closeModal = () => {
-    if (!modalRef.current) return;
-    setClosing(true);
-
-    gsap.to(modalRef.current, {
-      opacity: 0,
-      scale: 0.9,
-      duration: 0.4,
-      ease: "power3.inOut",
-      onComplete: () => {
-        setSelectedCollege(null);
-        setClosing(false);
-      },
-    });
-  };
+  if (checking) return null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-white to-blue-50">
-      {/* Hero Section */}
-      <section ref={heroRef} className="relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-20 px-6 md:px-16 rounded-b-3xl overflow-hidden shadow-lg">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50">
+
+      {/* 🔒 BLOCK OVERLAY */}
+      {!canAccess && (
+  <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+    <div className="bg-white rounded-xl p-6 text-center max-w-md shadow-xl">
+      <h2 className="text-xl font-bold mb-2">Profile Incomplete</h2>
+
+      <p className="text-gray-600 mb-4">
+        Please complete your {qualification === "10" ? "10th" : "12th"} profile to view examinations.
+      </p>
+
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={() => navigate("/profile")}
+          className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition"
+        >
+          Go to Profile Setup
+        </button>
+
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="bg-gray-300 text-gray-800 px-5 py-2 rounded-lg hover:bg-gray-400 transition"
+        >
+          Back
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+     <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-white to-blue-50">
+     {/* HERO */}
+      <section
+        ref={heroRef}
+        className="relative bg-gradient-to-r from-blue-600 to-indigo-600
+        text-white py-20 px-6 md:px-16 rounded-b-3xl overflow-hidden shadow-lg"
+      >
         {/* Floating shapes */}
         <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
         <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
         <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
         <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
 
-        <div className="relative z-10 max-w-3xl mx-auto text-center">
+        {/* Content */}
+       <div className="relative z-10 max-w-3xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-3">
-            <span className="animate-bounce inline-grid">🎓</span> Suggested Colleges for You
+            <span className="animate-bounce inline-grid">🏫</span> Suggested Colleges for You
           </h1>
           <p className="text-lg opacity-90 max-w-2xl mx-auto">Discover colleges that align with your goals and preferences.</p>
         </div>
+
         <Sparkles className="absolute top-10 right-10 w-16 h-16 text-white opacity-20 animate-spin-slow" />
       </section>
 
@@ -388,6 +464,7 @@ const sampleColleges = [
           </div>
         </>
       )}
+    </div>
     </div>
   );
 }

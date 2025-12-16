@@ -283,7 +283,6 @@ export default function ProfileSetup12th({ onComplete, initialData, email, compl
     }
 
     if (onComplete) onComplete(finalData);
-    if (onComplete) complete();
     alert("✅ 12th profile saved successfully!");
   };
 

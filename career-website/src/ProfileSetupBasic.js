@@ -88,60 +88,90 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
       </h1>
 
       <form onSubmit={handleNext}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-6">
+        <div className="grid grid-cols-1 gap-y-6">
 
-          {/* LEFT COLUMN */}
-          <div className="flex flex-col gap-6">
-            <Input label="First Name *" name="firstName" value={form.firstName} onChange={handleChange} required />
-            <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} />
-            <Input label="Last Name *" name="lastName" value={form.lastName} onChange={handleChange} required />
-          </div>
+  <Input
+    label="First Name *"
+    name="firstName"
+    value={form.firstName}
+    onChange={handleChange}
+    required
+  />
 
-          {/* RIGHT COLUMN */}
-          <div className="flex flex-col gap-6">
-            <Input label="Date of Birth *" type="date" name="dob" value={form.dob} onChange={handleChange} required />
-            <Input label="Phone Number *" name="phone" value={form.phone} onChange={handleChange} required />
+  <Input
+    label="Middle Name"
+    name="middleName"
+    value={form.middleName}
+    onChange={handleChange}
+  />
 
-            <Select
-              label="Qualification *"
-              name="qualification"
-              value={form.qualification}
-              onChange={handleChange}
-              options={[
-                { label: "Select Qualification", value: "" },
-                { label: "10th", value: "10" },
-                { label: "12th", value: "12" }
-              ]}
-            />
+  <Input
+    label="Last Name *"
+    name="lastName"
+    value={form.lastName}
+    onChange={handleChange}
+    required
+  />
 
-            <Select
-              label="Gender *"
-              name="gender"
-              value={form.gender}
-              onChange={handleChange}
-              options={[
-                { label: "Select Gender", value: "" },
-                { label: "Male", value: "male" },
-                { label: "Female", value: "female" },
-                { label: "Other", value: "other" }
-              ]}
-            />
+  <Input
+    label="Date of Birth *"
+    type="date"
+    name="dob"
+    value={form.dob}
+    onChange={handleChange}
+    required
+  />
 
-            <Select
-              label="Stream *"
-              name="Stream"
-              value={form.Stream}
-              onChange={handleChange}
-              options={[
-                { label: "Select Stream", value: "" },
-                { label: "PCMB", value: "PCMB" },
-                { label: "PCM", value: "PCM" },
-                { label: "Atrs/Commerce", value: "Arts/Commerce" }
-              ]}
-            />
-          </div>
-        </div>
+  <Input
+    label="Phone Number *"
+    name="phone"
+    value={form.phone}
+    onChange={handleChange}
+    required
+  />
 
+  <Select
+    label="Qualification *"
+    name="qualification"
+    value={form.qualification}
+    onChange={handleChange}
+    options={[
+      { label: "Select Qualification", value: "" },
+      { label: "10th", value: "10" },
+      { label: "12th", value: "12" }
+    ]}
+  />
+
+  {/* ✅ Stream appears ONLY for 12th */}
+  {form.qualification === "12" && (
+    <Select
+      label="Stream *"
+      name="Stream"
+      value={form.Stream}
+      onChange={handleChange}
+      options={[
+        { label: "Select Stream", value: "" },
+        { label: "PCMB", value: "PCMB" },
+        { label: "PCM", value: "PCM" },
+        { label: "Arts/Commerce", value: "Arts/Commerce" }
+      ]}
+    />
+  )}
+
+  <Select
+    label="Gender *"
+    name="gender"
+    value={form.gender}
+    onChange={handleChange}
+    options={[
+      { label: "Select Gender", value: "" },
+      { label: "Male", value: "male" },
+      { label: "Female", value: "female" },
+      { label: "Other", value: "other" }
+    ]}
+  />
+
+</div>
         <div className="text-center">
           <button
             type="submit"

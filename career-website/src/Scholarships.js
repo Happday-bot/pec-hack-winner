@@ -1,31 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronUp, ScrollText, Sparkles } from "lucide-react";
 import gsap from "gsap";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "./supabase";
+
 
 export default function Scholarships() {
   const heroRef = useRef(null);
+    const navigate = useNavigate();
 
-  const [scholarships, setScholarships] = useState([]);
-  const [expanded, setExpanded] = useState({});
+  const [canAccess, setCanAccess] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [qualification, setQualification] = useState(null);
 
-  // SEARCH + FILTER states
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStream, setSelectedStream] = useState("All Stream");
-  const [selectedCriteria, setSelectedCriteria] = useState("All Criteria");
-
-  const streams = ["All Stream", "Engineering", "Medical", "Arts", "Science", "Law", "Management"];
-  const specialCriteria = [
-    "All Criteria",
-    "Women's College",
-    "Minority/Community Based",
-    "Central Government",
-    "State Government",
-    "Income-Based",
-    "Disability-Based",
-    "Merit-Based"
-  ];
-
-   useEffect(() => {
+  useEffect(() => {
     if (heroRef.current) {
       // Hero fade in
       gsap.fromTo(
@@ -47,6 +35,69 @@ export default function Scholarships() {
 
     
   }, []);
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      const rawQualification = sessionStorage.getItem("qualification");
+
+      const normalized =
+        rawQualification === "10" || rawQualification === "10th"
+          ? "10"
+          : rawQualification === "12" || rawQualification === "12th"
+          ? "12"
+          : null;
+
+      setQualification(normalized);
+
+      const email =
+        sessionStorage.getItem("userEmail") ||
+        sessionStorage.getItem("signUpEmail");
+
+      if (!normalized || !email) {
+        setCanAccess(false);
+        setChecking(false);
+        return;
+      }
+
+      const table =
+        normalized === "10" ? "10th_profile_data" : "12th_profile_data";
+
+      const { data } = await supabase
+        .from(table)
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      setCanAccess(!!data);
+      setChecking(false);
+    };
+
+    checkAccess();
+  }, []);
+
+  const [scholarships, setScholarships] = useState([]);
+  const [expanded, setExpanded] = useState({});
+
+  // SEARCH + FILTER states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStream, setSelectedStream] = useState("All Stream");
+  const [selectedCriteria, setSelectedCriteria] = useState("All Criteria");
+
+  const streams = ["All Stream", "Engineering", "Medical", "Arts", "Science", "Law", "Management"];
+  const specialCriteria = [
+    "All Criteria",
+    "Women's College",
+    "Minority/Community Based",
+    "Central Government",
+    "State Government",
+    "Income-Based",
+    "Disability-Based",
+    "Merit-Based"
+  ];
+
+
+
+
   // Load dummy data
   useEffect(() => {
     const dummyScholarships = [
@@ -199,33 +250,67 @@ export default function Scholarships() {
       }
     });
 
+    if (checking) return null;
+
   return (
+    <>
+    {/* 🔒 PROFILE INCOMPLETE OVERLAY */}
+{!canAccess && (
+  <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+    <div className="bg-white rounded-xl p-6 text-center max-w-md shadow-xl">
+      <h2 className="text-xl font-bold mb-2">Profile Incomplete</h2>
+
+      <p className="text-gray-600 mb-4">
+        Please complete your {qualification === "10" ? "10th" : "12th"} profile to view examinations.
+      </p>
+
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={() => navigate("/profile")}
+          className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition"
+        >
+          Go to Profile Setup
+        </button>
+
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="bg-gray-300 text-gray-800 px-5 py-2 rounded-lg hover:bg-gray-400 transition"
+        >
+          Back
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
     <div className="flex flex-col min-h-screen">
       {/* HERO */}
-            <section
-              ref={heroRef}
-              className="relative bg-gradient-to-r from-blue-600 to-indigo-600
-              text-white py-20 px-6 md:px-16 rounded-b-3xl overflow-hidden shadow-lg"
-            >
-              {/* Floating shapes */}
-              <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
-              <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
-              <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
-              <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
-      
-              {/* Content */}
-              <div className="relative z-10 max-w-3xl mx-auto text-center">
-                 <h1 className="flex justify-center items-center gap-3 text-4xl md:text-5xl font-extrabold mb-3">
-            <ScrollText className="w-8 h-8 text-yellow-600 animate-bounce" />
-            Scholarships
+      <section
+        ref={heroRef}
+        className="relative bg-gradient-to-r from-blue-600 to-indigo-600
+        text-white py-20 px-6 md:px-16 rounded-b-3xl overflow-hidden shadow-lg"
+      >
+        {/* Floating shapes */}
+        <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
+        <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
+        <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
+        <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
+
+        {/* Content */}
+        <div className="relative z-10 max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-3">
+            <span className="animate-bounce inline-grid">🎓</span> Scholarships
           </h1>
+           
+          
           <p className="text-lg opacity-90 max-w-2xl mx-auto">
             Explore scholarships that align with your academic goals and financial needs.
           </p>
-              </div>
-      
-              <Sparkles className="absolute top-10 right-10 w-16 h-16 text-white opacity-20 animate-spin-slow" />
-            </section>
+        </div>
+
+        <Sparkles className="absolute top-10 right-10 w-16 h-16 text-white opacity-20 animate-spin-slow" />
+      </section>
 
       {/* Main Content */}
       <main className="flex-grow">
@@ -317,5 +402,6 @@ export default function Scholarships() {
         © 2025 Career Website. All rights reserved.
       </footer>
     </div>
+    </>
   );
 }
