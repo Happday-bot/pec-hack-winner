@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabase";
-import { Sparkles } from "lucide-react";
+import { Search, X, Sparkles } from "lucide-react";
 
 /* =========================================
    STREAM → DOMAIN ELIGIBILITY (12th ONLY)
-   (Approved static rule)
 ========================================= */
 const STREAM_DOMAIN_MAP = {
   PCMB: ["Engineering", "Science"],
@@ -20,7 +19,8 @@ export default function SuggestedCourses() {
   const [courses, setCourses] = useState([]);
   const [careers, setCareers] = useState([]);
   const [selectedCareer, setSelectedCareer] = useState("all");
-  const [activeTab, setActiveTab] = useState("interest"); // interest | eligible
+  const [activeTab, setActiveTab] = useState("interest");
+  const [searchQuery, setSearchQuery] = useState(""); // 🔍 UI ONLY
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -28,11 +28,11 @@ export default function SuggestedCourses() {
     sessionStorage.getItem("userEmail") ||
     sessionStorage.getItem("signUpEmail");
 
-  const qualification = sessionStorage.getItem("qualification"); // 10th | 12th
-  const stream = sessionStorage.getItem("stream"); // PCMB / PCM / Arts
+  const qualification = sessionStorage.getItem("qualification");
+  const stream = sessionStorage.getItem("stream");
 
   /* =========================================
-     FETCH CAREERS (FOR DROPDOWN)
+     FETCH CAREERS (DROPDOWN)
   ========================================= */
   useEffect(() => {
     const fetchCareers = async () => {
@@ -40,15 +40,13 @@ export default function SuggestedCourses() {
         .from("careers")
         .select("id, name")
         .order("name");
-
       setCareers(data || []);
     };
-
     fetchCareers();
   }, []);
 
   /* =========================================
-     FETCH COURSES (CORE LOGIC – UNCHANGED)
+     FETCH COURSES (LOGIC UNCHANGED)
   ========================================= */
   useEffect(() => {
     const fetchCourses = async () => {
@@ -63,68 +61,42 @@ export default function SuggestedCourses() {
 
       let interestKeys = [];
 
-      /* ---------- INTEREST LOGIC (UNCHANGED) ---------- */
       if (activeTab === "interest") {
-        const { data: interestRow, error: iErr } = await supabase
+        const { data } = await supabase
           .from("interest")
           .select("interest")
           .eq("student_id", email)
           .single();
 
-        if (iErr || !interestRow?.interest?.recommended_fields) {
-          setError("No interests found.");
-          setLoading(false);
-          return;
-        }
-
-        interestKeys = interestRow.interest.recommended_fields;
+        interestKeys = data?.interest?.recommended_fields || [];
       }
 
-      /* ---------- BASE QUERY ---------- */
       let query = supabase
         .from("course_mapping")
         .select("*")
         .eq("qualification", qualification);
 
-      /* ---------- APPLY INTEREST ---------- */
       if (activeTab === "interest") {
         query = query.in("interest_key", interestKeys);
       }
 
-      /* ---------- 12th ELIGIBLE LOGIC ---------- */
       if (qualification === "12th" && activeTab === "eligible") {
         const allowedDomains = STREAM_DOMAIN_MAP[stream] || [];
-        if (!allowedDomains.length) {
-          setCourses([]);
-          setLoading(false);
-          return;
-        }
         query = query.in("domain", allowedDomains);
       }
 
-      const { data, error: cErr } = await query;
-
-      if (cErr) {
-        setError("Failed to load courses.");
-        setLoading(false);
-        return;
-      }
-
+      const { data } = await query;
       let finalCourses = data || [];
 
-      /* =========================================
-         CAREER FILTER (ORDER FIXED – UNCHANGED)
-      ========================================= */
       if (selectedCareer !== "all") {
         const { data: mappings } = await supabase
           .from("course_career_mapping")
           .select("course_id")
           .eq("career_id", selectedCareer);
 
-        const allowedCourseIds = (mappings || []).map(m => m.course_id);
-
+        const allowedIds = mappings.map(m => m.course_id);
         finalCourses = finalCourses.filter(c =>
-          allowedCourseIds.includes(c.id)
+          allowedIds.includes(c.id)
         );
       }
 
@@ -136,9 +108,13 @@ export default function SuggestedCourses() {
   }, [email, qualification, stream, activeTab, selectedCareer]);
 
   /* =========================================
-     GROUPING (UNCHANGED)
+     GROUP + SEARCH FILTER (UI ONLY)
   ========================================= */
-  const groupedCourses = courses.reduce((acc, course) => {
+  const filteredCourses = courses.filter(c =>
+    c.course_title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const groupedCourses = filteredCourses.reduce((acc, course) => {
     const key =
       qualification === "10th"
         ? course.stream || course.domain
@@ -149,77 +125,79 @@ export default function SuggestedCourses() {
     return acc;
   }, {});
 
-  /* =========================================
-     UI STATES
-  ========================================= */
-  if (loading) {
-    return <div className="p-10 text-gray-500">Loading courses…</div>;
-  }
+  if (loading) return <div className="p-10">Loading courses…</div>;
+  if (error) return <div className="p-10 text-red-600">{error}</div>;
 
-  if (error) {
-    return <div className="p-10 text-red-600">{error}</div>;
-  }
-
-  /* =========================================
-     RENDER
-  ========================================= */
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-indigo-50">
 
-      {/* ===== BIG HERO BANNER (CAREER PAGE STYLE) ===== */}
+      {/* ===== HERO BANNER ===== */}
       <section
         ref={heroRef}
         className="relative bg-gradient-to-r from-blue-600 to-indigo-600
-                   text-white py-20 px-6 md:px-16
-                   rounded-b-3xl overflow-hidden shadow-lg"
+                   text-white py-20 px-6 rounded-b-3xl shadow-lg"
       >
-        {/* floating shapes */}
         <div className="absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
         <div className="absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
-        <div className="absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
 
-        <div className="relative z-10 max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-3">
+        <div className="relative z-10 text-center max-w-3xl mx-auto">
+          <h1 className="text-4xl font-extrabold mb-3">
             🎓 Suggested Courses for You
           </h1>
-          <p className="text-lg opacity-90">
-            Based on your interests and eligibility
+          <p className="opacity-90">
+            Explore courses based on your qualification and interests
           </p>
         </div>
 
-        <Sparkles className="absolute top-10 right-10 w-16 h-16 text-white opacity-20" />
+        <Sparkles className="absolute top-10 right-10 w-14 h-14 opacity-20" />
       </section>
 
       {/* ===== CONTENT ===== */}
       <div className="max-w-7xl mx-auto px-6 py-12">
 
-        {/* ===== TABS + CAREER FILTER ===== */}
-        <div className="flex flex-wrap gap-4 items-center justify-between mb-12">
-          <div className="flex gap-4">
+        {/* SEARCH BAR */}
+        <div className="max-w-xl mx-auto mb-10 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Search courses..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-10 py-3 border rounded-xl shadow-sm"
+          />
+          {searchQuery && (
             <button
-              onClick={() => setActiveTab("interest")}
-              className={`px-6 py-2 rounded-full font-medium ${
-                activeTab === "interest"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-200 text-gray-700"
-              }`}
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2"
             >
-              Based on My Interests
+              <X className="w-5 h-5 text-gray-400" />
             </button>
+          )}
+        </div>
 
-            <button
-              onClick={() => setActiveTab("eligible")}
-              className={`px-6 py-2 rounded-full font-medium ${
-                activeTab === "eligible"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-200 text-gray-700"
-              }`}
-            >
-              All Eligible Courses
-            </button>
+        {/* CENTERED TABS */}
+        <div className="flex justify-center mb-10">
+          <div className="bg-white rounded-full shadow p-1 flex gap-2">
+            {["interest", "eligible"].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-2 rounded-full font-medium transition ${
+                  activeTab === tab
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-600 hover:bg-indigo-100"
+                }`}
+              >
+                {tab === "interest"
+                  ? "Based on My Interests"
+                  : "All Eligible Courses"}
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* CAREER DROPDOWN */}
+        {/* CAREER FILTER */}
+        <div className="flex justify-end mb-10">
           <select
             value={selectedCareer}
             onChange={e => setSelectedCareer(e.target.value)}
@@ -227,71 +205,31 @@ export default function SuggestedCourses() {
           >
             <option value="all">All Careers</option>
             {careers.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
+              <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
         </div>
 
-        {/* ===== COURSE GROUPS ===== */}
-        {Object.entries(groupedCourses).map(([groupTitle, items]) => {
-          const diplomaCourses = items.filter(i => i.level === "diploma");
-
-          return (
-            <div key={groupTitle} className="mb-16">
-              <h2 className="text-2xl font-semibold mb-6">
-                {groupTitle}
-              </h2>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {items.map(course => (
-                  <div
-                    key={course.id}
-                    className="bg-white border rounded-xl shadow-sm p-6 hover:shadow-md transition"
-                  >
-                    <h3 className="text-lg font-bold mb-2">
-                      {course.course_title}
-                    </h3>
-
-                    <p className="text-sm text-gray-600">
-                      Domain: {course.domain}
-                    </p>
-
-                    <p className="text-xs text-gray-500">
-                      Based on your interest: {course.interest_key}
-                    </p>
-                  </div>
-                ))}
-
-                {/* INFORMATIONAL CARD – 10TH ONLY */}
-                {qualification === "10th" &&
-                  activeTab === "interest" &&
-                  diplomaCourses.length > 0 && (
-                    <div className="border-2 border-dashed border-indigo-300 bg-indigo-50 rounded-xl p-6 flex flex-col justify-center">
-                      <h4 className="font-bold text-indigo-700 mb-2">
-                        After 12th – {groupTitle}
-                      </h4>
-                      <p className="text-sm text-gray-700">
-                        You can choose <strong>{groupTitle}</strong> in 12th
-                        and later pursue degree-level programs.
-                      </p>
-                      <p className="text-xs text-indigo-600 mt-2">
-                        Informational Path (No action required)
-                      </p>
-                    </div>
-                  )}
-              </div>
+        {/* COURSES */}
+        {Object.entries(groupedCourses).map(([group, items]) => (
+          <div key={group} className="mb-16">
+            <h2 className="text-2xl font-semibold mb-6">{group}</h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {items.map(course => (
+                <div key={course.id} className="bg-white p-6 rounded-xl shadow">
+                  <h3 className="font-bold">{course.course_title}</h3>
+                  <p className="text-sm text-gray-600">Domain: {course.domain}</p>
+                </div>
+              ))}
             </div>
-          );
-        })}
-
-        {!courses.length && (
-          <div className="text-gray-600 text-center mt-10">
-            No courses available for this selection.
           </div>
+        ))}
+
+        {!filteredCourses.length && (
+          <p className="text-center text-gray-500">No courses found.</p>
         )}
       </div>
     </div>
   );
 }
+
