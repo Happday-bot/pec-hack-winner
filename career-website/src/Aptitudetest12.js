@@ -10,7 +10,7 @@ const AptitudeTest = () => {
   const navigate = useNavigate();
   const ai = new GoogleGenAI({
     //apiKey: "dummy", // do not push this api key to the repository
-    apiKey : "AIzaSyDnb5_dP-pDMqV2_8v2aO-_9XULzWkyxP8",
+    apiKey : "AIzaSyAYDPBXqPTdg1EPUrJTru9OuwMN2qhXL2A",
   });
 
   const [index, setIndex] = useState(0);

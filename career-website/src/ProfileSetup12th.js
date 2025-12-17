@@ -199,7 +199,10 @@ export default function ProfileSetup12th({ onComplete, initialData, email, compl
     interest: "",
     ambition: "",
     otherAmbition: "",
-    cutoff: ""
+    cutoff: "",
+     neetScore: "",     // ✅ NEW
+  jeeScore: "",      // ✅ NEW
+    preferredLocations: ["", "", "", "", ""], // NEW
   };
 
   const [form, setForm] = useState(emptyForm);
@@ -216,7 +219,10 @@ export default function ProfileSetup12th({ onComplete, initialData, email, compl
         interest: initialData.interest || "",
         ambition: initialData.ambition || "",
         otherAmbition: initialData.ambition && !ambitionOptions.includes(initialData.ambition) ? initialData.ambition : "",
-        cutoff: initialData.cutoff || ""
+        cutoff: initialData.cutoff || "",
+        neetScore: initialData.neet_score || "",   // ✅ NEW
+  jeeScore: initialData.jee_score || "",     // ✅ NEW
+        preferredLocations: initialData.preferred_locations || ["", "", "", "", ""],
       });
 
       // Map subjects
@@ -242,6 +248,15 @@ export default function ProfileSetup12th({ onComplete, initialData, email, compl
     updated[index].marks = value;
     setSelectedSubjects(updated);
   };
+
+  const handleLocationChange = (index, value) => {
+  setForm(prev => {
+    const updated = [...prev.preferredLocations];
+    updated[index] = value;
+    return { ...prev, preferredLocations: updated };
+  });
+};
+
 
   const handleFinish = async e => {
     e.preventDefault();
@@ -269,8 +284,19 @@ export default function ProfileSetup12th({ onComplete, initialData, email, compl
       subjects: selectedSubjects,
       interest: form.interest,
       ambition: form.ambition === "Others" ? form.otherAmbition : form.ambition,
+      neet_score: form.neetScore || null,   // ✅ NEW
+  jee_score: form.jeeScore || null,     // ✅ NEW
+        preferred_locations: form.preferredLocations, // ✅ ADD THIS
       email // from parent
     };
+    const filledLocations = form.preferredLocations.filter(
+  loc => loc.trim() !== ""
+);
+
+if (filledLocations.length < 3) {
+  return alert("Please enter at least 3 preferred locations.");
+}
+
 
     const { error } = await supabase
       .from("12th_profile_data")
@@ -354,6 +380,61 @@ export default function ProfileSetup12th({ onComplete, initialData, email, compl
           placeholder="Specify ambition"
         />
       )}
+    {/* Preferred Locations */}
+<div>
+  <h3 className="font-semibold mb-2">
+    Preferred Locations (Any 3 Required)
+  </h3>
+
+  <div className="space-y-2">
+    {form.preferredLocations.map((loc, index) => (
+      <input
+        key={index}
+        type="text"
+        value={loc}
+        onChange={(e) => handleLocationChange(index, e.target.value)}
+        className="w-full border p-2 rounded"
+        placeholder={`Preferred Location ${index + 1}${index < 3 ? " *" : ""}`}
+      />
+    ))}
+  </div>
+</div>
+{/* NEET / JEE (Optional) */}
+<div className="space-y-4">
+
+  {/* NEET */}
+  <div className="flex items-center gap-4">
+    <label className="w-32 font-semibold">
+      NEET Score
+    </label>
+    <input
+      type="number"
+      name="neetScore"
+      value={form.neetScore}
+      onChange={handleChange}
+      className="flex-1 border p-2 rounded"
+      placeholder="If applicable"
+    />
+  </div>
+
+  {/* JEE */}
+  <div className="flex items-center gap-4">
+    <label className="w-32 font-semibold">
+      JEE Score
+    </label>
+    <input
+      type="number"
+      name="jeeScore"
+      value={form.jeeScore}
+      onChange={handleChange}
+      className="flex-1 border p-2 rounded"
+      placeholder="If applicable"
+    />
+  </div>
+
+</div>
+
+
 
       <button className="bg-blue-600 text-white px-6 py-2 rounded">
         Save & Finish
