@@ -277,11 +277,12 @@
 //   );
 // }
 
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfileSetup10th({ onComplete, initialData, email }) {
+  const navigate = useNavigate(); // ✅ ADDED
 
   const emptyForm = {
     medium: "",
@@ -359,7 +360,7 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
     ]);
 
     const derivedOptionalSubjects = Object.keys(initialData.marks || {}).filter(
-      subj => !compulsorySet.has(subj)
+      (subj) => !compulsorySet.has(subj)
     );
 
     setForm({
@@ -377,20 +378,20 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
   // ---------- Handlers ----------
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const toggleSubject = (subject) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       selectedSubjects: prev.selectedSubjects.includes(subject)
-        ? prev.selectedSubjects.filter(s => s !== subject)
+        ? prev.selectedSubjects.filter((s) => s !== subject)
         : [...prev.selectedSubjects, subject],
     }));
   };
 
   const handleMarksChange = (subject, value) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       marks: { ...prev.marks, [subject]: value },
     }));
@@ -401,7 +402,8 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
     e.preventDefault();
 
     if (!form.medium) return alert("Please select a medium.");
-    if (!form.compulsoryLanguage) return alert("Please select a compulsory language.");
+    if (!form.compulsoryLanguage)
+      return alert("Please select a compulsory language.");
 
     const allSubjects = [
       form.compulsoryLanguage,
@@ -427,9 +429,7 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
       marks: form.marks,
       interest: form.interest,
       ambition:
-        form.ambition === "Others"
-          ? form.otherAmbition
-          : form.ambition,
+        form.ambition === "Others" ? form.otherAmbition : form.ambition,
       email,
     };
 
@@ -443,8 +443,19 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
       return;
     }
 
-    onComplete?.();
+    /* ===============================
+       ✅ ADDED — REQUIRED FLOW LOGIC
+       =============================== */
+    sessionStorage.setItem("qualification", "10th");
+    sessionStorage.setItem("interest", form.interest);
+    sessionStorage.setItem("profileCompleted", "true");
+
     alert("✅ Profile 10th details saved successfully!");
+
+    // Go to Aptitude Test
+    navigate("/Aptitudetest12");
+
+    onComplete?.();
   };
 
   // ---------- UI (UNCHANGED) ----------
@@ -452,12 +463,19 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
     <div className="space-y-10 px-8 py-6 max-w-3xl mx-auto">
       <h2 className="text-2xl font-bold">Profile Setup – 10th Details</h2>
 
-      <form onSubmit={handleFinish} className="space-y-6 bg-white shadow-lg rounded-xl p-8">
-
+      <form
+        onSubmit={handleFinish}
+        className="space-y-6 bg-white shadow-lg rounded-xl p-8"
+      >
         {/* Medium */}
         <div>
           <label className="font-semibold">Medium *</label>
-          <select name="medium" value={form.medium} onChange={handleChange} className="w-full border p-2 rounded">
+          <select
+            name="medium"
+            value={form.medium}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+          >
             <option value="">Select</option>
             <option>Urdu</option>
             <option>English</option>
@@ -470,7 +488,12 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
         {/* Compulsory Language */}
         <div>
           <label className="font-semibold">Compulsory Language *</label>
-          <select name="compulsoryLanguage" value={form.compulsoryLanguage} onChange={handleChange} className="w-full border p-2 rounded">
+          <select
+            name="compulsoryLanguage"
+            value={form.compulsoryLanguage}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+          >
             <option value="">Select</option>
             <option>Urdu</option>
             <option>Hindi</option>
@@ -483,7 +506,7 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
         <div>
           <h3 className="font-semibold mb-2">Optional Subjects</h3>
           <div className="flex flex-wrap gap-2">
-            {additionalSubjects.map(subj => (
+            {additionalSubjects.map((subj) => (
               <button
                 key={subj}
                 type="button"
@@ -505,13 +528,15 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
           <h3 className="font-semibold mb-2">Marks</h3>
           {[form.compulsoryLanguage, ...compulsorySubjects, ...form.selectedSubjects]
             .filter(Boolean)
-            .map(subj => (
+            .map((subj) => (
               <div key={subj} className="flex gap-2 items-center">
                 <span className="w-1/2 font-bold">{subj}</span>
                 <input
                   type="number"
                   value={form.marks[subj] || ""}
-                  onChange={(e) => handleMarksChange(subj, e.target.value)}
+                  onChange={(e) =>
+                    handleMarksChange(subj, e.target.value)
+                  }
                   className="w-1/2 border p-2 rounded"
                 />
               </div>
@@ -521,18 +546,32 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
         {/* Interest */}
         <div>
           <label className="font-semibold">Interest *</label>
-          <select name="interest" value={form.interest} onChange={handleChange} className="w-full border p-2 rounded">
+          <select
+            name="interest"
+            value={form.interest}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+          >
             <option value="">Select</option>
-            {interestSubjects.map(i => <option key={i}>{i}</option>)}
+            {interestSubjects.map((i) => (
+              <option key={i}>{i}</option>
+            ))}
           </select>
         </div>
 
         {/* Ambition */}
         <div>
           <label className="font-semibold">Ambition *</label>
-          <select name="ambition" value={form.ambition} onChange={handleChange} className="w-full border p-2 rounded">
+          <select
+            name="ambition"
+            value={form.ambition}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+          >
             <option value="">Select</option>
-            {ambitionOptions.map(a => <option key={a}>{a}</option>)}
+            {ambitionOptions.map((a) => (
+              <option key={a}>{a}</option>
+            ))}
           </select>
 
           {form.ambition === "Others" && (

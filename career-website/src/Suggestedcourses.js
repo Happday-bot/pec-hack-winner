@@ -1,270 +1,378 @@
-import React, { useState, useRef, useEffect } from "react";
-import { BookOpen, TrendingUp, Award, Hash, Layers, Sparkles } from "lucide-react";
-import gsap from "gsap";
+// import React, { useEffect, useState } from "react";
+// import { supabase } from "./supabase";
 
-const SuggestedCourses = ({ name = "User" }) => {
-  const heroRef = useRef(null);
-  const cardsRef = useRef([]);
-  cardsRef.current = [];
+// export default function SuggestedCourses() {
+//   const [courses, setCourses] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState("");
 
-  const addToRefs = (el) => {
-    if (el && !cardsRef.current.includes(el)) cardsRef.current.push(el);
-  };
+//   const email =
+//     sessionStorage.getItem("userEmail") ||
+//     sessionStorage.getItem("signUpEmail");
 
-  const [selectedFilter, setSelectedFilter] = useState("interest");
-const [searchTerm, setSearchTerm] = useState("");
+//   const qualification = sessionStorage.getItem("qualification"); // "10th" | "12th"
 
-  const sampleCareerMap = {
-    c1: "Software Engineer",
-    c2: "Frontend Developer",
-    c3: "Backend Developer",
-    c4: "Data Scientist",
-    c5: "Doctor",
-    c6: "Nurse",
-    c7: "Teacher",
-  };
+//   /* ==============================
+//      FETCH DATA
+//      ============================== */
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       if (!email || !qualification) {
+//         setError("Missing profile details.");
+//         setLoading(false);
+//         return;
+//       }
 
-  const sampleCourses = [
-  { _id: "101", course: "B.Sc Computer Science", demand: 1, stream: "Arts & Science", degree: "Bachelors", courseCode: "CS101", careerId: ["c1", "c2"] },
-  { _id: "102", course: "B.Tech Computer Engineering", demand: 1, stream: "Engineering", degree: "B.Tech", courseCode: "CE201", careerId: ["c1", "c3"] },
-  { _id: "103", course: "B.Sc Nursing", demand: 0, stream: "Medical", degree: "Bachelors", courseCode: "NB301", careerId: ["c6"] },
-  { _id: "104", course: "B.A English Literature", demand: 0, stream: "Arts & Science", degree: "Bachelors", courseCode: "EL401", careerId: ["c7"] },
-  { _id: "105", course: "B.Tech Mechanical Engineering", demand: 1, stream: "Engineering", degree: "B.Tech", courseCode: "ME501", careerId: ["c1", "c3"] },
-  { _id: "106", course: "B.Sc Biotechnology", demand: 1, stream: "Applied Science", degree: "Bachelors", courseCode: "BT601", careerId: ["c4"] },
-  { _id: "107", course: "MBBS", demand: 1, stream: "Medical", degree: "Doctorate", courseCode: "MD701", careerId: ["c5"] },
-  { _id: "108", course: "B.Ed in Science Education", demand: 0, stream: "Teacher Training", degree: "Bachelors", courseCode: "TE801", careerId: ["c7"] },
-  { _id: "109", course: "M.Sc Data Science", demand: 1, stream: "Arts & Science", degree: "Masters", courseCode: "DS901", careerId: ["c4", "c1"] },
-  { _id: "110", course: "Diploma in Nursing", demand: 1, stream: "Medical", degree: "Diploma", courseCode: "DN1001", careerId: ["c6"] },
-  { _id: "111", course: "M.Tech Artificial Intelligence", demand: 1, stream: "Engineering", degree: "Masters", courseCode: "AI1101", careerId: ["c2", "c3"] },
-  { _id: "112", course: "B.Sc Psychology", demand: 0, stream: "Arts & Science", degree: "Bachelors", courseCode: "PS1201", careerId: ["c7"] },
-  { _id: "113", course: "B.A Music", demand: 0, stream: "Arts & Science", degree: "Bachelors", courseCode: "MU1301", careerId: ["c7"] },
-  { _id: "114", course: "M.Sc Nursing", demand: 1, stream: "Medical", degree: "Masters", courseCode: "MN1401", careerId: ["c6"] },
-];
+//       // 1️⃣ fetch interests
+//       const { data: interestRow, error: iErr } = await supabase
+//         .from("interest")
+//         .select("interest")
+//         .eq("student_id", email)
+//         .single();
 
+//       if (iErr || !interestRow?.interest?.recommended_fields) {
+//         setError("No interests found.");
+//         setLoading(false);
+//         return;
+//       }
 
-  const [recommendedCourses] = useState(sampleCourses);
-  const [isLoading] = useState(false);
-  const [demandFilter, setDemandFilter] = useState("");
-  const [streamFilter, setStreamFilter] = useState("");
-  const [careerFilter, setCareerFilter] = useState("");
-  const [careerMap] = useState(sampleCareerMap);
+//       const interestKeys = interestRow.interest.recommended_fields;
 
-  const streamOptions = ["Arts & Science", "Engineering", "Medical", "Applied Science", "Teacher Training"];
+//       // 2️⃣ fetch course mapping
+//       const { data: mapped, error: cErr } = await supabase
+//         .from("course_mapping")
+//         .select("*")
+//         .eq("qualification", qualification)
+//         .in("interest_key", interestKeys);
 
-  const handleFilterChange = (filter) => {
-    setSelectedFilter(filter);
-    setDemandFilter("");
-    setStreamFilter("");
-    setCareerFilter("");
-  };
+//       if (cErr) {
+//         setError("Failed to load courses.");
+//         setLoading(false);
+//         return;
+//       }
 
-  const getFilteredCourses = () => {
-  return recommendedCourses.filter((course) => {
-    let matches = true;
+//       setCourses(mapped || []);
+//       setLoading(false);
+//     };
 
-    // Search filter
-    if (searchTerm)
-      matches =
-        matches &&
-        course.course.toLowerCase().includes(searchTerm.toLowerCase());
+//     fetchData();
+//   }, [email, qualification]);
 
-    // Demand filter
-    if (demandFilter === "high")
-      matches = matches && course.demand === 1;
+//   /* ==============================
+//      GROUPING
+//      ============================== */
 
-    // Stream filter
-    if (streamFilter)
-      matches = matches && course.stream === streamFilter;
+//   const grouped = courses.reduce((acc, c) => {
+//     // For 10th → group by STREAM
+//     // For 12th → group by DOMAIN
+//     const key =
+//       qualification === "10th"
+//         ? c.stream || c.domain
+//         : c.domain;
 
-    // Career filter
-    if (careerFilter)
-      matches =
-        matches &&
-        course.careerId &&
-        course.careerId.some((id) => careerMap[id] === careerFilter);
+//     if (!acc[key]) acc[key] = [];
+//     acc[key].push(c);
+//     return acc;
+//   }, {});
 
-    return matches;
-  });
+//   /* ==============================
+//      UI STATES
+//      ============================== */
+//   if (loading) {
+//     return <div className="p-10 text-gray-500">Loading courses…</div>;
+//   }
+
+//   if (error) {
+//     return <div className="p-10 text-red-600">{error}</div>;
+//   }
+
+//   if (!courses.length) {
+//     return <div className="p-10 text-gray-600">No recommendations available.</div>;
+//   }
+
+//   /* ==============================
+//      RENDER
+//      ============================== */
+//   return (
+//     <div className="max-w-6xl mx-auto px-6 py-10">
+//       <h1 className="text-3xl font-bold text-indigo-700 mb-10">
+//         Recommended Courses for You
+//       </h1>
+
+//       {Object.entries(grouped).map(([groupTitle, items]) => {
+//         const diplomaCourses = items.filter(i => i.level === "diploma");
+
+//         return (
+//           <div key={groupTitle} className="mb-14">
+//             {/* STREAM / DOMAIN TITLE */}
+//             <h2 className="text-2xl font-semibold mb-6">
+//               {groupTitle}
+//             </h2>
+
+//             {/* DIPLOMA / DEGREE CARDS */}
+//             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+//               {items.map(course => (
+//                 <div
+//                   key={course.id}
+//                   className="bg-white border rounded-xl shadow-sm p-6 hover:shadow-md transition"
+//                 >
+//                   <h3 className="text-lg font-bold mb-2">
+//                     {course.course_title}
+//                   </h3>
+
+//                   <p className="text-sm text-gray-600 mb-1">
+//                     <strong>Domain:</strong> {course.domain}
+//                   </p>
+
+//                   <p className="text-xs text-gray-500">
+//                     Based on your interest:{" "}
+//                     <span className="capitalize">
+//                       {course.interest_key}
+//                     </span>
+//                   </p>
+//                 </div>
+//               ))}
+//             </div>
+
+//             {/* EXTRA INFO ONLY FOR 10TH */}
+//             {qualification === "10th" && diplomaCourses.length > 0 && (
+//               <div className="mt-6 text-sm text-indigo-700 font-medium">
+//                 If pursuing 12th →
+//                 <span className="ml-2 text-gray-700">
+//                   Choose related stream based on this interest
+//                 </span>
+//               </div>
+//             )}
+//           </div>
+//         );
+//       })}
+//     </div>
+//   );
+// }
+import React, { useEffect, useState } from "react";
+import { supabase } from "./supabase";
+
+/* =========================================
+   STREAM → DOMAIN ELIGIBILITY (12th ONLY)
+   ========================================= */
+const STREAM_DOMAIN_MAP = {
+  PCMB: ["Engineering", "Science"],
+  PCM: ["Engineering", "Science"],
+  PCB: ["Medical", "Science"],
+  Commerce: ["Commerce", "Management"],
+  Arts: ["Arts", "Law", "Design"]
 };
 
+export default function SuggestedCourses() {
+  const [courses, setCourses] = useState([]);
+  const [activeTab, setActiveTab] = useState("interest"); // interest | eligible
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  const email =
+    sessionStorage.getItem("userEmail") ||
+    sessionStorage.getItem("signUpEmail");
 
-  const filteredCourses = getFilteredCourses();
+  const qualification = sessionStorage.getItem("qualification"); // "10th" | "12th"
+  const stream = sessionStorage.getItem("stream"); // PCMB / PCM / Arts etc
 
-  const renderCourses = () =>
-    filteredCourses.map((course) => (
-      <div
-        key={course._id}
-        ref={addToRefs}
-        className="relative bg-white/90 backdrop-blur-md rounded-2xl p-6 shadow transition transform cursor-pointer border border-gray-100 flex flex-col justify-between min-h-[200px] hover:shadow-lg hover:-translate-y-0.5 opacity-0"
-      >
-        {course.demand === 1 && (
-          <span className="absolute top-2 right-2 px-2 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-semibold">
-            ✅ Demand
-          </span>
-        )}
-        <div>
-          <h4 className="font-bold text-lg text-gray-800 mb-2 flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-indigo-600" />
-            {course.course}
-          </h4>
-          <div className="text-sm text-gray-500 space-y-1">
-            <div className="flex items-center gap-3">
-              <Layers className="w-4 h-4 text-blue-500" />
-              Stream: {course.stream || "N/A"}
-            </div>
-            <div className="flex items-center gap-3">
-              <Award className="w-4 h-4 text-blue-500" />
-              Degree: {course.degree || "N/A"}
-            </div>
-            <div className="flex items-center gap-3">
-              <Hash className="w-4 h-4 text-blue-500" />
-              Course Code: {course.courseCode || "N/A"}
-            </div>
-          </div>
-        </div>
-      </div>
-    ));
-
+  /* =========================================
+     FETCH COURSES
+     ========================================= */
   useEffect(() => {
-    // Hero animation
-    gsap.fromTo(
-      heroRef.current,
-      { opacity: 0, y: -50 },
-      { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }
-    );
-    gsap.to(".floating-shape", {
-      y: "-=20",
-      repeat: -1,
-      yoyo: true,
-      duration: 2,
-      ease: "sine.inOut",
-      stagger: 0.3,
-    });
-  }, []);
+    const fetchCourses = async () => {
+      setLoading(true);
+      setError("");
 
-  useEffect(() => {
-    // Animate course cards on every filter change
-    gsap.fromTo(
-      cardsRef.current,
-      { opacity: 0, y: -30 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.6,
-        ease: "power3.out",
-        stagger: 0.2, // stagger one by one
+      if (!email || !qualification) {
+        setError("Profile details missing.");
+        setLoading(false);
+        return;
       }
+
+      let interestKeys = [];
+
+      /* ---------- BASED ON INTEREST ---------- */
+      if (activeTab === "interest") {
+        const { data: interestRow, error: iErr } = await supabase
+          .from("interest")
+          .select("interest")
+          .eq("student_id", email)
+          .single();
+
+        if (iErr || !interestRow?.interest?.recommended_fields) {
+          setError("No interests found.");
+          setLoading(false);
+          return;
+        }
+
+        interestKeys = interestRow.interest.recommended_fields;
+      }
+
+      /* ---------- BASE QUERY ---------- */
+      let query = supabase
+        .from("course_mapping")
+        .select("*")
+        .eq("qualification", qualification);
+
+      /* ---------- APPLY LOGIC ---------- */
+      if (activeTab === "interest") {
+        query = query.in("interest_key", interestKeys);
+      }
+
+      /* ---------- 12th ELIGIBLE LOGIC (FIXED) ---------- */
+      if (qualification === "12th" && activeTab === "eligible") {
+        const allowedDomains = STREAM_DOMAIN_MAP[stream] || [];
+
+        if (!allowedDomains.length) {
+          setCourses([]);
+          setLoading(false);
+          return;
+        }
+
+        query = query.in("domain", allowedDomains);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        setError("Failed to load courses.");
+        setLoading(false);
+        return;
+      }
+
+      setCourses(data || []);
+      setLoading(false);
+    };
+
+    fetchCourses();
+  }, [email, qualification, stream, activeTab]);
+
+  /* =========================================
+     GROUPING
+     ========================================= */
+  const groupedCourses = courses.reduce((acc, course) => {
+    const key =
+      qualification === "10th"
+        ? course.stream || course.domain
+        : course.domain;
+
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(course);
+    return acc;
+  }, {});
+
+  /* =========================================
+     UI STATES
+     ========================================= */
+  if (loading) {
+    return <div className="p-10 text-gray-500">Loading courses…</div>;
+  }
+
+  if (error) {
+    return <div className="p-10 text-red-600">{error}</div>;
+  }
+
+  if (!courses.length) {
+    return (
+      <div className="p-10 text-gray-600">
+        No courses available for this selection.
+      </div>
     );
-  }, [filteredCourses]);
+  }
 
+  /* =========================================
+     RENDER
+     ========================================= */
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-white to-blue-50">
-      {/* Hero Section */}
-      <section
-        ref={heroRef}
-        className="relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-20 px-6 md:px-16 rounded-b-3xl overflow-hidden shadow-lg"
-      >
-    
+    <div className="max-w-7xl mx-auto px-6 py-10">
+      {/* HEADER */}
+      <h1 className="text-3xl font-bold text-indigo-700 mb-6">
+        🎓 Recommended Courses for You
+      </h1>
 
-        {/* Floating shapes */}
-        <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
-        <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
-        <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
-        <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
+      {/* TABS */}
+      <div className="flex gap-4 mb-10">
+        <button
+          onClick={() => setActiveTab("interest")}
+          className={`px-6 py-2 rounded-full font-medium ${
+            activeTab === "interest"
+              ? "bg-indigo-600 text-white"
+              : "bg-gray-200 text-gray-700"
+          }`}
+        >
+          Based on My Interests
+        </button>
 
-        <div className="relative z-10 max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-3">
-            <span className="animate-bounce inline-grid">🎯</span> Suggested Courses for You
-          </h1>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto">
-            Explore courses based on your qualification and interests.
-          </p>
-        </div>
-        <Sparkles className="absolute top-10 right-10 w-16 h-16 text-white opacity-20 animate-spin-slow" />
-      </section>
-      {/* Search Bar */}
-<div className="flex justify-center mt-10 px-6">
-  <div className="relative w-full max-w-xl">
-    <input
-      type="text"
-      placeholder="Search courses..."
-      className="w-full bg-white rounded-2xl py-3 pl-12 pr-4 shadow-md border border-gray-50 focus:ring-2 focus:ring-indigo-400 outline-none"
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-    />
-
-    {/* Search icon */}
-    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-      🔍
-    </span>
-  </div>
-</div>
-
-
-      {/* Filter buttons */}
-      <div className="flex justify-center mt-10">
-        <div className="bg-white/90 backdrop-blur-md rounded-full shadow-lg flex p-2 space-x-4">
-          <button
-            onClick={() => handleFilterChange("interest")}
-            className={`px-6 py-2 rounded-full font-medium transition ${
-              selectedFilter === "interest" ? "bg-indigo-600 text-white shadow-md" : "text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            Based on My Interests
-          </button>
-          <button
-            onClick={() => handleFilterChange("all")}
-            className={`px-6 py-2 rounded-full font-medium transition ${
-              selectedFilter === "all" ? "bg-indigo-600 text-white shadow-md" : "text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            All Eligible Courses
-          </button>
-        </div>
+        <button
+          onClick={() => setActiveTab("eligible")}
+          className={`px-6 py-2 rounded-full font-medium ${
+            activeTab === "eligible"
+              ? "bg-indigo-600 text-white"
+              : "bg-gray-200 text-gray-700"
+          }`}
+        >
+          All Eligible Courses
+        </button>
       </div>
 
-      {/* Dropdown filters */}
-      <div className="sticky top-2 z-30 flex justify-center mt-10 px-6 space-x-40">
-        <select value={demandFilter} onChange={(e) => setDemandFilter(e.target.value)} className="px-4 py-2 rounded-xl border shadow-sm bg-white/90 backdrop-blur text-gray-700">
-          <option value="">All</option>
-          <option value="high">Demand</option>
-        </select>
+      {/* COURSE GROUPS */}
+      {Object.entries(groupedCourses).map(([groupTitle, items]) => {
+        const diplomaCourses = items.filter(i => i.level === "diploma");
 
-        <select value={streamFilter} onChange={(e) => setStreamFilter(e.target.value)} className="px-4 py-2 rounded-xl border shadow-sm bg-white/90 backdrop-blur text-gray-700">
-          <option value="">All Streams</option>
-          {streamOptions.map((stream, i) => (
-            <option key={i} value={stream}>{stream}</option>
-          ))}
-        </select>
+        return (
+          <div key={groupTitle} className="mb-16">
+            {/* GROUP TITLE */}
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+              {groupTitle}
+            </h2>
 
-        <select value={careerFilter} onChange={(e) => setCareerFilter(e.target.value)} className="px-4 py-2 rounded-xl border shadow-sm bg-white/90 backdrop-blur text-gray-700">
-          <option value="">All Careers</option>
-          {Object.values(careerMap).map((career, i) => (
-            <option key={i} value={career}>{career}</option>
-          ))}
-        </select>
-      </div>
+            {/* COURSES */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {items.map(course => (
+                <div
+                  key={course.id}
+                  className="bg-white border rounded-xl shadow-sm p-6 hover:shadow-md transition"
+                >
+                  <h3 className="text-lg font-bold mb-2">
+                    {course.course_title}
+                  </h3>
 
-      {/* Courses */}
-      <main className="flex-1 px-6 md:px-12 lg:px-20 py-12">
-        {isLoading ? (
-          <div className="text-center text-gray-500 animate-pulse">Loading courses...</div>
-        ) : filteredCourses.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">{renderCourses()}</div>
-        ) : (
-          <div className="text-center text-gray-500 mt-10">
-            <TrendingUp className="mx-auto w-12 h-12 text-gray-400 mb-3" />
-            No courses found for the selected filters.
+                  <p className="text-sm text-gray-600 mb-1">
+                    <strong>Domain:</strong> {course.domain}
+                  </p>
+
+                  <p className="text-xs text-gray-500">
+                    Based on your interest:{" "}
+                    <span className="capitalize">
+                      {course.interest_key}
+                    </span>
+                  </p>
+                </div>
+              ))}
+
+              {/* ---------- INFORMATIONAL CARD (10th ONLY) ---------- */}
+              {qualification === "10th" &&
+                activeTab === "interest" &&
+                diplomaCourses.length > 0 && (
+                  <div className="border-2 border-dashed border-indigo-300 bg-indigo-50 rounded-xl p-6 flex flex-col justify-center">
+                    <h4 className="font-bold text-indigo-700 mb-2">
+                      After 12th – {groupTitle}
+                    </h4>
+                    <p className="text-sm text-gray-700">
+                      You can also choose <strong>{groupTitle}</strong> in 12th
+                      and later pursue degree-level programs in this domain.
+                    </p>
+                    <p className="text-xs text-indigo-600 mt-2">
+                      Informational Path (No action required)
+                    </p>
+                  </div>
+                )}
+            </div>
           </div>
-        )}
-      </main>
-
-      <footer className="bg-gray-100 text-gray-600 text-center py-6 mt-auto border-t">
-        © 2025 Career Advisor • Crafted with 💙
-      </footer>
+        );
+      })}
     </div>
   );
-};
+}
 
-export default SuggestedCourses;
