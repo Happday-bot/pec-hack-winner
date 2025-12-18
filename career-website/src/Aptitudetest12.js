@@ -8,7 +8,7 @@ const AptitudeTest = () => {
 
   // 🔐 Gemini
   const ai = new GoogleGenAI({
-    apiKey: "AIzaSyAYDPBXqPTdg1EPUrJTru9OuwMN2qhXL2A",
+    //apiKey: "",
   });
 
   const [questions, setQuestions] = useState([]);

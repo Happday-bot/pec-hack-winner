@@ -156,7 +156,7 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
 
     onComplete?.(payload);
 
-    navigate("/test"); // aptitude test
+    navigate("/dashboard"); // aptitude test
   };
 
   /* ================= UI ================= */

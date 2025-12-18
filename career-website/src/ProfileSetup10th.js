@@ -453,7 +453,7 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
     alert("✅ Profile 10th details saved successfully!");
 
     // Go to Aptitude Test
-    navigate("/Aptitudetest12");
+    navigate("/dashboard");
 
     onComplete?.();
   };
