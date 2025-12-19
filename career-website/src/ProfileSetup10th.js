@@ -292,6 +292,7 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
     interest: "",
     ambition: "",
     otherAmbition: "",
+    preferredLocations: ["", "", "", "", ""], // NEW
   };
 
   const [form, setForm] = useState(emptyForm);
@@ -372,6 +373,8 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
       ambition: initialData.ambition || "",
       selectedSubjects: derivedOptionalSubjects,
       otherAmbition: "",
+      preferredLocations: initialData.preferred_locations || ["", "", "", "", ""],
+
     });
   }, [initialData]);
 
@@ -396,6 +399,15 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
       marks: { ...prev.marks, [subject]: value },
     }));
   };
+
+  const handleLocationChange = (index, value) => {
+  setForm(prev => {
+    const updated = [...prev.preferredLocations];
+    updated[index] = value;
+    return { ...prev, preferredLocations: updated };
+  });
+};
+
 
   // ---------- Submit ----------
   const handleFinish = async (e) => {
@@ -423,13 +435,23 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
       return alert("Please specify your ambition.");
     }
 
+    const filledLocations = form.preferredLocations.filter(loc => loc.trim() !== "");
+
+if (filledLocations.length < 3) {
+  return alert("Please select at least 3 preferred locations.");
+}
+
+
     const payload = {
       medium: form.medium,
       language: form.compulsoryLanguage,
       marks: form.marks,
       interest: form.interest,
       ambition:
-        form.ambition === "Others" ? form.otherAmbition : form.ambition,
+        form.ambition === "Others"
+          ? form.otherAmbition
+          : form.ambition,
+      preferred_locations: form.preferredLocations, // NEW
       email,
     };
 
@@ -585,6 +607,26 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
             />
           )}
         </div>
+        {/* Preferred Locations */}
+<div>
+  <h3 className="font-semibold mb-2">
+    Preferred Locations (Any 3 Required)
+  </h3>
+
+  <div className="space-y-2">
+    {form.preferredLocations.map((loc, index) => (
+      <input
+        key={index}
+        type="text"
+        value={loc}
+        onChange={(e) => handleLocationChange(index, e.target.value)}
+        className="w-full border p-2 rounded"
+        placeholder={`Preferred Location ${index + 1}${index < 3 ? " *" : ""}`}
+      />
+    ))}
+  </div>
+</div>
+
 
         <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded">
           Save & Finish

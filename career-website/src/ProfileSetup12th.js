@@ -48,6 +48,10 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
     interest: "",
     ambition: "",
     otherAmbition: "",
+    cutoff: "",
+     neetScore: "",     // ✅ NEW
+  jeeScore: "",      // ✅ NEW
+    preferredLocations: ["", "", "", "", ""], // NEW
   };
 
   const [form, setForm] = useState(emptyForm);
@@ -55,20 +59,17 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
 
   /* ================= LOAD EXISTING DATA ================= */
   useEffect(() => {
-    if (!initialData) return;
-
-    setForm({
-      medium: initialData.medium || "",
-      compulsoryLanguage: initialData.Language || "",
-      stream: initialData.stream || "",
-      interest: initialData.interest || "",
-      ambition: initialData.ambition || "",
-      otherAmbition:
-        initialData.ambition &&
-        !ambitionOptions.includes(initialData.ambition)
-          ? initialData.ambition
-          : "",
-    });
+    if (initialData) {
+      setForm({
+        ...emptyForm,
+        medium: initialData.medium || "",
+        compulsoryLanguage: initialData.Language || "", // map Language → compulsoryLanguage
+        stream: initialData.stream || "",
+        interest: initialData.interest || "",
+        ambition: initialData.ambition || "",
+        otherAmbition: initialData.ambition && !ambitionOptions.includes(initialData.ambition) ? initialData.ambition : "",
+        cutoff: initialData.cutoff || ""
+      });
 
     setSelectedSubjects(initialData.subjects || []);
   }, [initialData]);
@@ -92,6 +93,15 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
     updated[index].marks = value;
     setSelectedSubjects(updated);
   };
+
+  const handleLocationChange = (index, value) => {
+  setForm(prev => {
+    const updated = [...prev.preferredLocations];
+    updated[index] = value;
+    return { ...prev, preferredLocations: updated };
+  });
+};
+
 
   /* ================= SUBMIT ================= */
   const handleFinish = async (e) => {
@@ -131,10 +141,17 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
       stream: form.stream,
       subjects: selectedSubjects,
       interest: form.interest,
-      ambition:
-        form.ambition === "Others" ? form.otherAmbition : form.ambition,
-      email,
+      ambition: form.ambition === "Others" ? form.otherAmbition : form.ambition,
+      email // from parent
     };
+    const filledLocations = form.preferredLocations.filter(
+  loc => loc.trim() !== ""
+);
+
+if (filledLocations.length < 3) {
+  return alert("Please enter at least 3 preferred locations.");
+}
+
 
     const { error } = await supabase
       .from("12th_profile_data")
@@ -273,6 +290,61 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
           placeholder="Specify ambition"
         />
       )}
+    {/* Preferred Locations */}
+<div>
+  <h3 className="font-semibold mb-2">
+    Preferred Locations (Any 3 Required)
+  </h3>
+
+  <div className="space-y-2">
+    {form.preferredLocations.map((loc, index) => (
+      <input
+        key={index}
+        type="text"
+        value={loc}
+        onChange={(e) => handleLocationChange(index, e.target.value)}
+        className="w-full border p-2 rounded"
+        placeholder={`Preferred Location ${index + 1}${index < 3 ? " *" : ""}`}
+      />
+    ))}
+  </div>
+</div>
+{/* NEET / JEE (Optional) */}
+<div className="space-y-4">
+
+  {/* NEET */}
+  <div className="flex items-center gap-4">
+    <label className="w-32 font-semibold">
+      NEET Score
+    </label>
+    <input
+      type="number"
+      name="neetScore"
+      value={form.neetScore}
+      onChange={handleChange}
+      className="flex-1 border p-2 rounded"
+      placeholder="If applicable"
+    />
+  </div>
+
+  {/* JEE */}
+  <div className="flex items-center gap-4">
+    <label className="w-32 font-semibold">
+      JEE Score
+    </label>
+    <input
+      type="number"
+      name="jeeScore"
+      value={form.jeeScore}
+      onChange={handleChange}
+      className="flex-1 border p-2 rounded"
+      placeholder="If applicable"
+    />
+  </div>
+
+</div>
+
+
 
       <button className="bg-blue-600 text-white px-6 py-2 rounded">
         Save & Finish

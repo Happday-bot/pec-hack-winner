@@ -6,7 +6,7 @@ import { supabase } from "./supabase";
 const AptitudeTest = () => {
   const navigate = useNavigate();
 
-  // 🔐 Gemini
+  // 🔐 Gemini API (COMMENT THIS BEFORE FINAL COMMIT)
   const ai = new GoogleGenAI({
     apiKey: "AIzaSyAYDPBXqPTdg1EPUrJTru9OuwMN2qhXL2A",
   });
@@ -20,7 +20,9 @@ const AptitudeTest = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [finalResult, setFinalResult] = useState(null);
 
-  // ================= FETCH QUESTIONS =================
+  /* =========================
+     FETCH QUESTIONS
+  ========================= */
   useEffect(() => {
     const fetchQuestions = async () => {
       const { data, error } = await supabase
@@ -46,7 +48,9 @@ const AptitudeTest = () => {
     fetchQuestions();
   }, []);
 
-  // ================= ANSWER HANDLER =================
+  /* =========================
+     ANSWER HANDLER
+  ========================= */
   const handleAnswer = (choiceIndex) => {
     const letter = ["A", "B", "C", "D"][choiceIndex];
     const qid = questions[index].id;
@@ -60,7 +64,9 @@ const AptitudeTest = () => {
     }
   };
 
-  // ================= FINAL SUBMIT =================
+  /* =========================
+     FINAL SUBMIT
+  ========================= */
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
 
@@ -98,7 +104,7 @@ const AptitudeTest = () => {
 
       const rawText = response.text;
 
-      // 🧹 clean Gemini output
+      // 🧹 Clean Gemini output
       const cleaned = rawText
         .replace(/```json|```/g, "")
         .replace(/[^\x20-\x7E]/g, "")
@@ -113,7 +119,9 @@ const AptitudeTest = () => {
       const recommendedFields =
         parsed.final_outcome_recommendation?.map(r => r.field) || [];
 
-      // ================= SAVE TO SUPABASE =================
+      /* =========================
+         SAVE TO SUPABASE
+      ========================= */
       const { error } = await supabase
         .from("interest")
         .upsert(
@@ -133,7 +141,6 @@ const AptitudeTest = () => {
         return;
       }
 
-      // ✅ SUCCESS
       sessionStorage.setItem("aptitudeDone", "true");
       navigate("/courses");
 
@@ -145,7 +152,9 @@ const AptitudeTest = () => {
     }
   };
 
-  // ================= LOADING =================
+  /* =========================
+     LOADING
+  ========================= */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -154,7 +163,9 @@ const AptitudeTest = () => {
     );
   }
 
-  // ================= RESULT SCREEN =================
+  /* =========================
+     RESULT SCREEN
+  ========================= */
   if (finalResult) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
@@ -183,7 +194,9 @@ const AptitudeTest = () => {
     );
   }
 
-  // ================= QUESTION UI =================
+  /* =========================
+     QUESTION UI
+  ========================= */
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white p-8 rounded-xl shadow-xl max-w-2xl w-full">
@@ -243,4 +256,3 @@ const AptitudeTest = () => {
 };
 
 export default AptitudeTest;
-
