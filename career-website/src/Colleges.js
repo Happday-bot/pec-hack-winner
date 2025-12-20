@@ -1,470 +1,382 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Search, Sparkles } from "lucide-react";
+import { Search, Sparkles, MapPin, Building2, GraduationCap } from "lucide-react";
 import gsap from "gsap";
 import { supabase } from "./supabase";
 import { useNavigate } from "react-router-dom";
 
-
 export default function Colleges() {
-
   /* ===============================
-     🔐 ACCESS CONTROL (FINAL)
+     1. STATE MANAGEMENT
      =============================== */
-
+  const [colleges, setColleges] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [canAccess, setCanAccess] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [qualification, setQualification] = useState(null);
+  
+  // Filters
+  const [search, setSearch] = useState("");
+  const [selectedDomain, setSelectedDomain] = useState(""); // Changed from Stream to Domain
+  const [selectedMedium, setSelectedMedium] = useState("");
+  
+  // User Data
+  const [userPreferences, setUserPreferences] = useState([]); 
+  const [userStream, setUserStream] = useState(null); // Student's 12th Stream (PCM, PCB)
+
+  const [selectedCollege, setSelectedCollege] = useState(null);
+  
+  const heroRef = useRef(null);
   const navigate = useNavigate();
 
-
-  
+  /* ===============================
+     2. CHECK ACCESS & FETCH DATA
+     =============================== */
   useEffect(() => {
-    const checkAccess = async () => {
-      const rawQualification = sessionStorage.getItem("qualification");
+    const init = async () => {
+      try {
+        // A. Identify User
+        const rawQual = sessionStorage.getItem("qualification");
+        const email = sessionStorage.getItem("userEmail") || sessionStorage.getItem("signUpEmail");
+        
+        const qualification = rawQual === "10" || rawQual === "10th" ? "10" 
+                            : rawQual === "12" || rawQual === "12th" ? "12" : null;
 
-      const normalized =
-        rawQualification === "10" || rawQualification === "10th"
-          ? "10"
-          : rawQualification === "12" || rawQualification === "12th"
-          ? "12"
-          : null;
+        if (!qualification || !email) {
+          setCanAccess(false);
+          setChecking(false);
+          return;
+        }
 
-      setQualification(normalized);
+        // B. Fetch User Profile
+        const table = qualification === "10" ? "10th_profile_data" : "12th_profile_data";
+        
+        // Dynamically build query: 12th graders need 'stream' column fetched
+        let queryColumns = "preferred_locations";
+        if (qualification === "12") {
+            queryColumns += ", stream";
+        }
+        
+        const { data: profile, error: profileError } = await supabase
+          .from(table)
+          .select(queryColumns) 
+          .eq("email", email)
+          .maybeSingle();
 
-      const email =
-        sessionStorage.getItem("userEmail") ||
-        sessionStorage.getItem("signUpEmail");
+        if (profileError || !profile) {
+          console.error("Profile Error:", profileError);
+          setCanAccess(false);
+        } else {
+          setCanAccess(true);
+          
+          // --- PREFERENCES LOGIC ---
+          let prefs = [];
+          if (profile.preferred_locations && Array.isArray(profile.preferred_locations)) {
+             prefs = profile.preferred_locations;
+          } else if (profile.preferred_locations && typeof profile.preferred_locations === 'object') {
+             prefs = Object.values(profile.preferred_locations);
+          }
+          setUserPreferences(prefs);
 
-      if (!normalized || !email) {
-        setCanAccess(false);
+          // --- STREAM LOGIC (Student's Background) ---
+          if (qualification === "12" && profile.stream) {
+            setUserStream(profile.stream); 
+          }
+
+          // --- FETCH COLLEGES ---
+          let query = supabase.from("colleges").select("*");
+
+          // Filter by State Preference (Database Level)
+          if (prefs.length > 0) {
+            query = query.in("state", prefs);
+          }
+
+          const { data: collegeData, error: collegeError } = await query;
+          
+          if (collegeError) console.error("Error fetching colleges:", collegeError);
+          else setColleges(collegeData || []);
+        }
+      } catch (err) {
+        console.error("Init error:", err);
+      } finally {
         setChecking(false);
-        return;
+        setLoading(false);
       }
-
-      const table =
-        normalized === "10" ? "10th_profile_data" : "12th_profile_data";
-
-      const { data } = await supabase
-        .from(table)
-        .select("id")
-        .eq("email", email)
-        .maybeSingle();
-
-      setCanAccess(!!data);
-      setChecking(false);
     };
 
-    checkAccess();
+    init();
   }, []);
 
   /* ===============================
-     UI STATE
+     3. ELIGIBILITY MAPPING (Stream -> Domains)
      =============================== */
+  const getEligibleDomains = (studentStream) => {
+    if (!studentStream) return []; 
 
-  const heroRef = useRef(null);
-  const cardsRef = useRef([]);
-  const modalRef = useRef(null);
+    const s = studentStream.toUpperCase();
 
-  const [selectedCollege, setSelectedCollege] = useState(null);
-  const [search, setSearch] = useState("");
-  const [stream, setStream] = useState("");
-  const [medium, setMedium] = useState("");
+    const map = {
+      // PCM Student -> Eligible for these Domains
+      "PCM": ["Engineering", "Science", "Design", "Management", "Law", "Arts", "Commerce"], 
+      "PCB": ["Medical", "Science", "Design", "Management", "Law", "Arts"], 
+      "PCMB": ["Engineering", "Medical", "Science", "Design", "Management", "Law", "Arts", "Commerce"], 
+      "COMMERCE": ["Commerce", "Management", "Law", "Arts", "Design"], 
+      "ARTS": ["Arts", "Law", "Design", "Management"] 
+    };
 
-  cardsRef.current = [];
-  const addToRefs = (el) => {
-    if (el && !cardsRef.current.includes(el)) cardsRef.current.push(el);
+    return map[s] || [];
   };
 
   /* ===============================
-     MODAL CLOSE (FIX)
+     4. ANIMATION
      =============================== */
-  const closeModal = () => {
-    setSelectedCollege(null);
-  };
-
-  /* ===============================
-     SAMPLE DATA
-     =============================== */
-  const colleges = [
-    {
-      _id: "col1",
-      name: "St. Theresa's Institute of Technology",
-      address: "123 Main St, Springfield",
-      degrees: ["B.Tech", "M.Tech"],
-      stream: "Engineering",
-      medium: "English",
-      rank: "A1",
-      type: "Private",
-      contact: ["+1-555-0100"],
-      email: ["admissions@sttheresa.edu"],
-      eligible: "JEE/Board",
-      cutoff: { jee_rank: { General: 15000 }, neet_mark: {} },
-      duration: "4 years",
-      fees: "₹1,00,000 per year",
-      hostel: "Available",
-      lab: "Well-equipped",
-      lib: "Extensive",
-      placements: "80%",
-      career: "Software Engineer",
-      clubs: "Coding Club, Robotics",
-      rating: 4.2,
-    },
-    {
-    _id: "col2",
-    name: "Greenfield Medical College",
-    address: "45 Health Ave, Metropolis",
-    degrees: ["MBBS", "B.Sc Nursing"],
-    stream: "Medical",
-    medium: "English",
-    rank: "A2",
-    type: "Public",
-    contact: ["+1-555-0200"],
-    email: ["info@greenfieldmed.edu"],
-    eligible: "NEET/Board",
-    cutoff: { jee_rank: {}, neet_mark: { General: 560 }, board_marks: {} },
-    duration: "5 years",
-    admissionMode: "Merit",
-    admissionDate: "2026-07-15",
-    fees: "₹2,00,000 per year",
-    docs: "NEET score, 12th marksheet",
-    hostel: "Available",
-    lab: "Clinical labs",
-    lib: "Medical library",
-    net: "Good",
-    food: "Mess",
-    transport: "Limited",
-    sports: "Limited",
-    disable: "Yes",
-    placements: "60%",
-    career: "Doctor",
-    alumini: "Established",
-    clubs: "Health Club",
-    courses: ["MBBS", "B.Sc Nursing"],
-    courseid: ["MB101", "NS201"],
-    rating: 4.6,
-  },
-  {
-    _id: "col3",
-    name: "Sunrise Arts College",
-    address: "78 Art Lane, Harmony City",
-    degrees: ["BA", "MA"],
-    stream: "Arts",
-    medium: "English",
-    rank: "B1",
-    type: "Private",
-    contact: ["+1-555-0300"],
-    email: ["contact@sunrisearts.edu"],
-    eligible: "Board",
-    cutoff: { jee_rank: {}, neet_mark: {}, board_marks: { Arts: 75 } },
-    duration: "3 years",
-    admissionMode: "Merit",
-    admissionDate: "2026-05-10",
-    fees: "₹50,000 per year",
-    docs: "10th, 12th marksheets",
-    hostel: "Not Available",
-    lab: "N/A",
-    lib: "Art Library",
-    net: "Moderate",
-    food: "Cafeteria",
-    transport: "Limited",
-    sports: "Basic facilities",
-    disable: "Yes",
-    placements: "50%",
-    career: "Artist, Designer",
-    alumini: "Active",
-    clubs: "Music Club, Drama Club",
-    courses: ["Fine Arts", "Design"],
-    courseid: ["FA101", "DS102"],
-    rating: 4.0,
-  },
-  {
-    _id: "col4",
-    name: "National Law Academy",
-    address: "22 Justice Street, Capital City",
-    degrees: ["LLB", "LLM"],
-    stream: "Law",
-    medium: "English",
-    rank: "A3",
-    type: "Public",
-    contact: ["+1-555-0400"],
-    email: ["admissions@nla.edu"],
-    eligible: "CLAT",
-    cutoff: { jee_rank: {}, neet_mark: {}, board_marks: {} },
-    duration: "5 years",
-    admissionMode: "Entrance",
-    admissionDate: "2026-08-01",
-    fees: "₹1,50,000 per year",
-    docs: "CLAT score, 12th marksheet",
-    hostel: "Available",
-    lab: "N/A",
-    lib: "Law Library",
-    net: "Good",
-    food: "Mess",
-    transport: "Available",
-    sports: "Available",
-    disable: "Yes",
-    placements: "70%",
-    career: "Lawyer",
-    alumini: "Established",
-    clubs: "Debate Club",
-    courses: ["LLB", "LLM"],
-    courseid: ["LLB101", "LLM201"],
-    rating: 4.5,
-  },
-  {
-    _id: "col5",
-    name: "Global Business School",
-    address: "10 Corporate Blvd, Metro City",
-    degrees: ["BBA", "MBA"],
-    stream: "Management",
-    medium: "English",
-    rank: "B2",
-    type: "Private",
-    contact: ["+1-555-0500"],
-    email: ["info@globalbs.edu"],
-    eligible: "CAT/XAT/Board",
-    cutoff: { jee_rank: {}, neet_mark: {}, board_marks: { Commerce: 80 } },
-    duration: "3 years",
-    admissionMode: "Entrance",
-    admissionDate: "2026-06-20",
-    fees: "₹1,20,000 per year",
-    docs: "10th, 12th marksheets, CAT/XAT",
-    hostel: "Available",
-    lab: "Computer Lab",
-    lib: "Business Library",
-    net: "Good",
-    food: "Cafeteria",
-    transport: "Available",
-    sports: "Gym",
-    disable: "Yes",
-    placements: "75%",
-    career: "Manager, Analyst",
-    alumini: "Active",
-    clubs: "Entrepreneurship Club",
-    courses: ["Business Administration", "Finance"],
-    courseid: ["BBA101", "MBA201"],
-    rating: 4.3,
-  },
-  {
-    _id: "col6",
-    name: "Tech Innovators Institute",
-    address: "5 Innovation Road, Silicon Valley",
-    degrees: ["B.Tech", "M.Tech", "PhD"],
-    stream: "Engineering",
-    medium: "English",
-    rank: "A2",
-    type: "Private",
-    contact: ["+1-555-0600"],
-    email: ["admissions@techinnovators.edu"],
-    eligible: "JEE/Board",
-    cutoff: { jee_rank: { General: 12000 }, neet_mark: {}, board_marks: {} },
-    duration: "4 years",
-    admissionMode: "Entrance",
-    admissionDate: "2026-06-15",
-    fees: "₹1,50,000 per year",
-    docs: "10th, 12th certificates",
-    hostel: "Available",
-    lab: "Advanced Labs",
-    lib: "Technical Library",
-    net: "Excellent",
-    food: "Cafeteria",
-    transport: "Buses",
-    sports: "Facilities available",
-    disable: "Yes",
-    placements: "85%",
-    career: "Software Engineer, Researcher",
-    alumini: "Active",
-    clubs: "Robotics Club, AI Club",
-    courses: ["Computer Science", "AI & ML", "Electronics"],
-    courseid: ["CS201", "AI301", "EC101"],
-    rating: 4.7,
-  }
-  ];
-
-  const filteredColleges = colleges.filter(
-    (college) =>
-      college.name.toLowerCase().includes(search.toLowerCase()) &&
-      (stream === "" || college.stream === stream) &&
-      (medium === "" || college.medium === medium)
-  );
-
-  /* ===============================
-     ANIMATION
-     =============================== */
-     useEffect(() => {
+  useEffect(() => {
     if (heroRef.current) {
-      // Hero fade in
       gsap.fromTo(
         heroRef.current,
         { opacity: 0, y: -50 },
         { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }
       );
+    }
+  }, [loading]);
 
-      // Floating bubbles
-      gsap.to(".floating-shape", {
-        y: "-=20",
-        repeat: -1,
-        yoyo: true,
-        duration: 2,
-        ease: "sine.inOut",
-        stagger: 0.3,
-      });
+  /* ===============================
+     5. FILTERING & SORTING
+     =============================== */
+  let filteredColleges = colleges.filter((college) => {
+    // A. Search
+    const matchesSearch = college.name.toLowerCase().includes(search.toLowerCase()) || 
+                          college.district?.toLowerCase().includes(search.toLowerCase());
+    
+    // B. Dropdown Filters (Domain & Medium)
+    // Note: 'college.stream' in DB actually stores the Domain (Engineering, Medical)
+    const matchesDomain = selectedDomain ? college.stream === selectedDomain : true;
+    const matchesMedium = selectedMedium ? college.medium === selectedMedium : true;
+
+    // C. 12th Grade ELIGIBILITY FILTER
+    let isEligible = true;
+    if (userStream) {
+       const eligibleDomains = getEligibleDomains(userStream);
+       // Check if the College's Domain (college.stream) is in the Student's allowed list
+       if (eligibleDomains.length > 0 && !eligibleDomains.includes(college.stream)) {
+         isEligible = false;
+       }
     }
 
-    
-  }, []);
- 
+    return matchesSearch && matchesDomain && matchesMedium && isEligible;
+  });
 
-  if (checking) return null;
+  // SORTING
+  if (userPreferences.length > 0) {
+    filteredColleges.sort((a, b) => {
+      const indexA = userPreferences.indexOf(a.state);
+      const indexB = userPreferences.indexOf(b.state);
+      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+      return 0;
+    });
+  }
+
+  // Dynamic Dropdowns
+  // college.stream represents the Domain (Engineering, Medical)
+  const availableDomains = [...new Set(colleges.map(c => c.stream).filter(Boolean))];
+  
+  const validDropdownDomains = userStream 
+      ? availableDomains.filter(d => getEligibleDomains(userStream).includes(d))
+      : availableDomains;
+
+  const uniqueMediums = [...new Set(colleges.map(c => c.medium).filter(Boolean))];
+
+  /* ===============================
+     6. RENDER
+     =============================== */
+  if (checking) return <div className="min-h-screen flex items-center justify-center text-indigo-600 font-bold">Checking access...</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50">
-
-      {/* 🔒 BLOCK OVERLAY */}
+    <div className="min-h-screen bg-slate-50">
+      
       {!canAccess && (
-  <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
-    <div className="bg-white rounded-xl p-6 text-center max-w-md shadow-xl">
-      <h2 className="text-xl font-bold mb-2">Profile Incomplete</h2>
-
-      <p className="text-gray-600 mb-4">
-        Please complete your {qualification === "10" ? "10th" : "12th"} profile to view examinations.
-      </p>
-
-      <div className="flex justify-center gap-4">
-        <button
-          onClick={() => navigate("/profile")}
-          className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition"
-        >
-          Go to Profile Setup
-        </button>
-
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="bg-gray-300 text-gray-800 px-5 py-2 rounded-lg hover:bg-gray-400 transition"
-        >
-          Back
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
-
-     <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-white to-blue-50">
-     {/* HERO */}
-      <section
-        ref={heroRef}
-        className="relative bg-gradient-to-r from-blue-600 to-indigo-600
-        text-white py-20 px-6 md:px-16 rounded-b-3xl overflow-hidden shadow-lg"
-      >
-        {/* Floating shapes */}
-        <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
-        <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
-        <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
-        <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
-
-        {/* Content */}
-       <div className="relative z-10 max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-3">
-            <span className="animate-bounce inline-grid">🏫</span> Suggested Colleges for You
-          </h1>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto">Discover colleges that align with your goals and preferences.</p>
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-8 text-center max-w-md shadow-2xl">
+            <h2 className="text-2xl font-bold mb-3 text-gray-800">Profile Incomplete</h2>
+            <p className="text-gray-600 mb-6">
+              To view colleges based on your preferences, please complete your profile setup first.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button onClick={() => navigate("/profile")} className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-indigo-700 transition">
+                Go to Profile
+              </button>
+              <button onClick={() => navigate("/dashboard")} className="bg-gray-100 text-gray-700 px-6 py-2 rounded-xl font-bold hover:bg-gray-200 transition">
+                Back
+              </button>
+            </div>
+          </div>
         </div>
+      )}
 
-        <Sparkles className="absolute top-10 right-10 w-16 h-16 text-white opacity-20 animate-spin-slow" />
+      {/* HERO */}
+      <section ref={heroRef} className="bg-indigo-600 text-white py-20 px-6 rounded-b-[3rem] shadow-xl text-center relative overflow-hidden">
+        <Sparkles className="absolute top-10 right-10 w-12 h-12 text-white/20 animate-spin-slow" />
+        <div className="relative z-10 max-w-4xl mx-auto">
+          
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 flex items-center justify-center gap-3">
+            Suggested Colleges <GraduationCap className="w-10 h-10 md:w-12 md:h-12 text-yellow-300" />
+          </h1>
+
+          <p className="text-lg opacity-90">
+            {userStream 
+              ? `Showing eligible colleges for ${userStream} students in your preferred locations.`
+              : userPreferences.length > 0 
+                 ? `Showing top institutes in ${userPreferences.join(", ")}.`
+                 : "Discover institutes that align with your career goals."}
+          </p>
+        </div>
       </section>
 
-      {/* Search + Filters */}
-      <div className="mt-8 mb-8 flex flex-wrap items-center justify-between bg-white p-4 rounded-xl shadow max-w-[1830px] w-[98%] mx-auto">
-        <div className="relative w-120 w-[400px]">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Search colleges..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 pr-4 py-2 w-full border rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none"
-          />
-        </div>
-        <div className="flex space-x-4 ml-6 mt-2 md:mt-0">
-          <select className="p-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400" value={stream} onChange={(e) => setStream(e.target.value)}>
-            <option value="">Stream</option>
-            {[...new Set(colleges.map((c) => c.stream))].map((s) => <option key={s} value={s}>{s}</option>)}
+      {/* FILTERS */}
+      <div className="max-w-7xl mx-auto px-6 -mt-8 relative z-20">
+        <div className="bg-white p-4 rounded-2xl shadow-lg flex flex-col md:flex-row gap-4 items-center">
+          <div className="relative flex-grow w-full md:w-auto">
+            <Search className="absolute left-4 top-3 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Search by name or district..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          
+          {/* UPDATED DROPDOWN: DOMAIN */}
+          <select 
+            className="w-full md:w-48 p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            value={selectedDomain}
+            onChange={(e) => setSelectedDomain(e.target.value)}
+          >
+            <option value="">All Eligible Domains</option>
+            {validDropdownDomains.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
-          <select className="p-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400" value={medium} onChange={(e) => setMedium(e.target.value)}>
-            <option value="">Medium</option>
-            {[...new Set(colleges.map((c) => c.medium))].map((m) => <option key={m} value={m}>{m}</option>)}
+
+          <select 
+            className="w-full md:w-48 p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            value={selectedMedium}
+            onChange={(e) => setSelectedMedium(e.target.value)}
+          >
+            <option value="">All Mediums</option>
+            {uniqueMediums.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
       </div>
 
-      {/* Colleges Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 px-4 justify-items-center items-start">
-        {filteredColleges.length === 0 ? (
-          <p className="text-center col-span-2 text-gray-500">No colleges found.</p>
+      {/* GRID */}
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        {loading ? (
+          <div className="text-center py-20 text-indigo-600 font-bold">Loading colleges...</div>
+        ) : filteredColleges.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed">
+            <p className="text-gray-400 font-medium text-lg">
+               {userStream 
+                 ? `No eligible colleges found for ${userStream} in your preferred locations.` 
+                 : "No colleges found matching your criteria."}
+            </p>
+          </div>
         ) : (
-          filteredColleges.map((college) => (
-            <div key={college._id} ref={addToRefs} className="w-full max-w-xl relative">
-              <div className="p-4 border rounded-2xl shadow-lg bg-white hover:shadow-xl transition w-full">
-                <h2 className="text-xl font-bold text-indigo-700">{college.name}</h2>
-                <p className="text-gray-600 mt-1">{college.address}</p>
-                <p className="mt-2"><strong>Degrees:</strong> {college.degrees?.join(", ") || "N/A"}</p>
-                <p className="mt-2"><strong>Stream:</strong> {college.stream}</p>
-                <button
-                  onClick={() => setSelectedCollege(college)}
-                  className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow transition"
-                >
-                  View More
-                </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredColleges.map((college) => (
+              <div key={college.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col">
+                <div className="p-6 flex-grow">
+                  <div className="flex justify-between items-start mb-3">
+                    {/* Display Domain Tag */}
+                    <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                      {college.stream} 
+                    </span>
+                    <span className="flex items-center gap-1 text-xs font-semibold text-gray-500">
+                      <MapPin className="w-3 h-3" /> {college.district}, {college.state}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2 leading-tight">{college.name}</h3>
+                  <p className="text-sm text-gray-500 mb-4 line-clamp-2">{college.address}</p>
+                  
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <GraduationCap className="w-4 h-4 text-indigo-500" />
+                      <span className="font-medium">Degrees:</span> {college.degrees?.slice(0, 3).join(", ")}
+                    </div>
+                  </div>
+                </div>
+                <div className="px-6 pb-6 pt-0 mt-auto">
+                  <button
+                    onClick={() => setSelectedCollege(college)}
+                    className="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition active:scale-95"
+                  >
+                    View Details
+                  </button>
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Modal */}
+      {/* MODAL */}
       {selectedCollege && (
-        <>
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40"
-            onClick={closeModal}
-          />
-          <div
-            ref={modalRef}
-            className={`fixed top-1/2 left-1/2 w-[90vw] h-[90vh] bg-white shadow-2xl rounded-2xl p-6 overflow-y-auto z-50 transform -translate-x-1/2 -translate-y-1/2`}
-            style={{ opacity: 1, scale: 1 }}
-          >
-            <button
-              onClick={closeModal}
-              className="absolute top-4 right-4 text-gray-600 text-2xl font-bold hover:text-indigo-600"
-            >
-              ✕
-            </button>
-            <h2 className="text-2xl font-extrabold text-indigo-700 mb-4">{selectedCollege.name}</h2>
-            <p><strong>Address:</strong> {selectedCollege.address}</p>
-            <p><strong>Degrees:</strong> {selectedCollege.degrees.join(", ")}</p>
-            <p><strong>Stream:</strong> {selectedCollege.stream}</p>
-            <p><strong>Medium:</strong> {selectedCollege.medium}</p>
-            <p><strong>Rank:</strong> {selectedCollege.rank}</p>
-            <p><strong>Type:</strong> {selectedCollege.type}</p>
-            <p><strong>Contact:</strong> {selectedCollege.contact.join(", ")}</p>
-            <p><strong>Email:</strong> {selectedCollege.email.join(", ")}</p>
-            <p><strong>Eligible Exams:</strong> {selectedCollege.eligible}</p>
-            <p><strong>Cutoff:</strong> JEE - {selectedCollege.cutoff.jee_rank.General || "N/A"}, NEET - {selectedCollege.cutoff.neet_mark.General || "N/A"}</p>
-            <p><strong>Duration:</strong> {selectedCollege.duration}</p>
-            <p><strong>Admission Mode:</strong> {selectedCollege.admissionMode}</p>
-            <p><strong>Fees:</strong> {selectedCollege.fees}</p>
-            <p><strong>Hostel:</strong> {selectedCollege.hostel}</p>
-            <p><strong>Labs:</strong> {selectedCollege.lab}</p>
-            <p><strong>Library:</strong> {selectedCollege.lib}</p>
-            <p><strong>Placements:</strong> {selectedCollege.placements}</p>
-            <p><strong>Career:</strong> {selectedCollege.career}</p>
-            <p><strong>Clubs:</strong> {selectedCollege.clubs}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedCollege(null)}></div>
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl animate-fade-in-up">
+            <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center z-20">
+              <h2 className="text-2xl font-bold text-gray-800 pr-8">{selectedCollege.name}</h2>
+              <button onClick={() => setSelectedCollege(null)} className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full text-gray-600 transition">✕</button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="bg-indigo-50 p-5 rounded-2xl grid grid-cols-2 gap-4 text-sm">
+                <div><span className="block text-gray-500 font-bold uppercase text-xs">Rank</span><span className="font-semibold text-gray-800">{selectedCollege.rank || "N/A"}</span></div>
+                <div><span className="block text-gray-500 font-bold uppercase text-xs">Type</span><span className="font-semibold text-gray-800">{selectedCollege.type}</span></div>
+                <div><span className="block text-gray-500 font-bold uppercase text-xs">Rating</span><span className="font-semibold text-gray-800">{selectedCollege.rating ? `${selectedCollege.rating}/5` : "N/A"}</span></div>
+                <div><span className="block text-gray-500 font-bold uppercase text-xs">Location</span><span className="font-semibold text-gray-800">{selectedCollege.district}, {selectedCollege.state}</span></div>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 mb-2">Courses</h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedCollege.degrees?.map((deg, i) => (
+                    <span key={i} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium">{deg}</span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">Admission</h3>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li><span className="font-bold text-gray-800">Mode:</span> {selectedCollege.admission_mode}</li>
+                    <li><span className="font-bold text-gray-800">Exam:</span> {selectedCollege.eligible}</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">Details</h3>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li><span className="font-bold text-gray-800">Fees:</span> {selectedCollege.fees}</li>
+                    <li><span className="font-bold text-gray-800">Hostel:</span> {selectedCollege.hostel}</li>
+                  </ul>
+                </div>
+              </div>
+
+              {selectedCollege.cutoff && (
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">Cutoffs</h3>
+                  <div className="bg-gray-50 p-4 rounded-xl text-sm">
+                     {Object.entries(selectedCollege.cutoff).map(([exam, details]) => (
+                        <div key={exam} className="mb-2">
+                          <span className="font-bold uppercase text-indigo-600">{exam.replace('_', ' ')}: </span>
+                          <span className="text-gray-700">{typeof details === 'object' ? Object.entries(details).map(([cat, val]) => `${cat}: ${val}`).join(', ') : details}</span>
+                        </div>
+                     ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </>
+        </div>
       )}
-    </div>
     </div>
   );
 }

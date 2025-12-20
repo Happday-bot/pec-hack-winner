@@ -1,407 +1,570 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, ScrollText, Sparkles } from "lucide-react";
+import {
+  Sparkles,
+  Calendar,
+  MapPin,
+  IndianRupee,
+  BookOpen,
+  AlertCircle,
+  CheckCircle,
+  Timer,
+  ExternalLink,
+  X,
+  GraduationCap,
+  Users,
+  Search,
+  ChevronRight,
+  Filter,
+} from "lucide-react";
 import gsap from "gsap";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
 
-
 export default function Scholarships() {
   const heroRef = useRef(null);
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
+  // --- STATES ---
   const [canAccess, setCanAccess] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [qualification, setQualification] = useState(null);
 
+  const [userData, setUserData] = useState({
+    qual: null,
+    locations: [],
+    firstPref: null,
+  });
+
+  const [scholarships, setScholarships] = useState([]);
+  const [filteredList, setFilteredList] = useState([]);
+
+  // --- UI FILTERS ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("All Types");
+  const [filterGender, setFilterGender] = useState("All Genders");
+  const [filterCategory, setFilterCategory] = useState("All Categories");
+
+  const [selectedSch, setSelectedSch] = useState(null); // For Modal
+
+  /* =========================================
+     1. INIT: DATA FETCHING
+     ========================================= */
   useEffect(() => {
-    if (heroRef.current) {
-      // Hero fade in
-      gsap.fromTo(
-        heroRef.current,
-        { opacity: 0, y: -50 },
-        { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }
-      );
+    const init = async () => {
+      try {
+        const email =
+          sessionStorage.getItem("userEmail") ||
+          sessionStorage.getItem("signUpEmail");
+        if (!email) {
+          setChecking(false);
+          return;
+        }
 
-      // Floating bubbles
-      gsap.to(".floating-shape", {
-        y: "-=20",
-        repeat: -1,
-        yoyo: true,
-        duration: 2,
-        ease: "sine.inOut",
-        stagger: 0.3,
+        // 1. Fetch Profile
+        const { data: mainProfile, error } = await supabase
+          .from("profiles")
+          .select("qualification")
+          .eq("email", email)
+          .maybeSingle();
+
+        if (error || !mainProfile) {
+          setCanAccess(false);
+        } else {
+          setCanAccess(true);
+
+          let derivedQual = "10th";
+          if (
+            mainProfile.qualification &&
+            mainProfile.qualification.includes("12")
+          )
+            derivedQual = "12th";
+
+          // 2. Fetch Preference Locations
+          let userLocs = [];
+          let firstLocation = null;
+
+          const table =
+            derivedQual === "12th" ? "12th_profile_data" : "10th_profile_data";
+          const { data: prefData } = await supabase
+            .from(table)
+            .select("preferred_locations")
+            .eq("email", email)
+            .maybeSingle();
+
+          if (prefData && prefData.preferred_locations) {
+            if (Array.isArray(prefData.preferred_locations)) {
+              userLocs = prefData.preferred_locations;
+            } else {
+              userLocs = prefData.preferred_locations
+                .split(",")
+                .map((s) => s.trim());
+            }
+            if (userLocs.length > 0) firstLocation = userLocs[0];
+          }
+
+          setUserData({
+            qual: derivedQual,
+            locations: userLocs,
+            firstPref: firstLocation,
+          });
+
+          // 3. Fetch Scholarships
+          const { data: schData } = await supabase
+            .from("scholarships")
+            .select("*")
+            .order("deadline", { ascending: true });
+
+          setScholarships(schData || []);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setChecking(false);
+      }
+    };
+    init();
+  }, []);
+
+  /* =========================================
+     2. SMART FILTERING & SORTING
+     ========================================= */
+  useEffect(() => {
+    let result = [...scholarships];
+
+    // 1. SEARCH
+    if (searchTerm) {
+      result = result.filter(
+        (s) =>
+          s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          s.provider.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // 2. FILTER: TYPE
+    if (filterType !== "All Types") {
+      result = result.filter((s) => s.type === filterType);
+    }
+
+    // 3. FILTER: GENDER (Female / Any only)
+    if (filterGender !== "All Genders") {
+      result = result.filter(
+        (s) =>
+          s.gender &&
+          (s.gender === filterGender || s.gender === "Any")
+      );
+    }
+
+    // 4. FILTER: CATEGORY
+    if (filterCategory !== "All Categories") {
+      result = result.filter(
+        (s) =>
+          s.category &&
+          (s.category.includes(filterCategory) ||
+            s.category.includes("Any"))
+      );
+    }
+
+    // 5. LOCATION LOGIC (India + ALL preferred locations)
+    result = result.filter((s) => {
+      const region = (s.region || "India").toLowerCase();
+
+      // Always keep national scholarships
+      if (region === "india") return true;
+
+      // Keep any scholarship from any preferred location
+      if (userData.locations.length > 0) {
+        return userData.locations.some(
+          (loc) => loc.toLowerCase() === region
+        );
+      }
+
+      // If there are no preferred locations, hide non‑India
+      return false;
+    });
+
+    // 6. PRIORITY SORTING:
+    //    - Open scholarships first
+    //    - Within open/closed, first preferred state on top
+    if (userData.firstPref) {
+      const pref = userData.firstPref.toLowerCase();
+      const now = new Date();
+
+      result.sort((a, b) => {
+        const regionA = (a.region || "India").toLowerCase();
+        const regionB = (b.region || "India").toLowerCase();
+
+        const isOpenA = new Date(a.deadline) >= now;
+        const isOpenB = new Date(b.deadline) >= now;
+
+        // 1) Open before closed
+        if (isOpenA && !isOpenB) return -1;
+        if (!isOpenA && isOpenB) return 1;
+
+        // 2) Within same open/closed group, first preferred state first
+        const isPrefA = regionA === pref;
+        const isPrefB = regionB === pref;
+
+        if (isPrefA && !isPrefB) return -1;
+        if (!isPrefA && isPrefB) return 1;
+
+        // 3) Otherwise keep original relative order
+        return 0;
       });
     }
 
-    
-  }, []);
+    setFilteredList(result);
+  }, [scholarships, searchTerm, userData, filterType, filterGender, filterCategory]);
 
-  useEffect(() => {
-    const checkAccess = async () => {
-      const rawQualification = sessionStorage.getItem("qualification");
+  const getStatus = (dateStr) => {
+    const now = new Date();
+    const end = new Date(dateStr);
+    const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
 
-      const normalized =
-        rawQualification === "10" || rawQualification === "10th"
-          ? "10"
-          : rawQualification === "12" || rawQualification === "12th"
-          ? "12"
-          : null;
-
-      setQualification(normalized);
-
-      const email =
-        sessionStorage.getItem("userEmail") ||
-        sessionStorage.getItem("signUpEmail");
-
-      if (!normalized || !email) {
-        setCanAccess(false);
-        setChecking(false);
-        return;
-      }
-
-      const table =
-        normalized === "10" ? "10th_profile_data" : "12th_profile_data";
-
-      const { data } = await supabase
-        .from(table)
-        .select("id")
-        .eq("email", email)
-        .maybeSingle();
-
-      setCanAccess(!!data);
-      setChecking(false);
+    if (diff < 0)
+      return {
+        text: "Closed",
+        style: "bg-gray-100 text-gray-500 border-gray-200",
+        icon: AlertCircle,
+      };
+    if (diff <= 30)
+      return {
+        text: `Closing in ${diff} days`,
+        style: "bg-red-50 text-red-600 border-red-200 font-bold",
+        icon: Timer,
+      };
+    return {
+      text: "Open",
+      style: "bg-green-50 text-green-600 border-green-200",
+      icon: CheckCircle,
     };
-
-    checkAccess();
-  }, []);
-
-  const [scholarships, setScholarships] = useState([]);
-  const [expanded, setExpanded] = useState({});
-
-  // SEARCH + FILTER states
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStream, setSelectedStream] = useState("All Stream");
-  const [selectedCriteria, setSelectedCriteria] = useState("All Criteria");
-
-  const streams = ["All Stream", "Engineering", "Medical", "Arts", "Science", "Law", "Management"];
-  const specialCriteria = [
-    "All Criteria",
-    "Women's College",
-    "Minority/Community Based",
-    "Central Government",
-    "State Government",
-    "Income-Based",
-    "Disability-Based",
-    "Merit-Based"
-  ];
-
-
-
-
-  // Load dummy data
-  useEffect(() => {
-    const dummyScholarships = [
-      {
-        scholarship_name: "Post Matric Scholarship for SC Students",
-        type: "Minority/Community Based",
-        administered_by: "Ministry of Social Justice & Empowerment",
-        benefits: { tuition_fee_limit: 50000, maintenance_amount: 8000 },
-        eligibility: { min_class: 11, max_class: "UG/PG", income_limit: 250000, category: "SC", gender: "Any", domicile: "India", disability_required: false },
-        courses_covered: ["Engineering", "Medical", "Arts", "Science"],
-        application: { start_date: "2025-01-05", end_date: "2025-03-30", required_documents: ["Caste Certificate", "Income Certificate", "Aadhar"] },
-        seats: 10000,
-        application_portal: "https://scholarships.gov.in",
-      },
-      {
-        scholarship_name: "Inspire Scholarship (SHE)",
-        type: "Merit-Based",
-        administered_by: "Department of Science & Technology",
-        benefits: { tuition_fee_limit: 0, maintenance_amount: 80000 },
-        eligibility: { min_class: 12, max_class: "UG", min_percentage: 85, category: "General", gender: "Any", domicile: "India" },
-        courses_covered: ["B.Sc", "M.Sc", "Research"],
-        application: { start_date: "2025-01-15", end_date: "2025-03-01", required_documents: ["Aadhar", "Marksheet", "Bank Passbook"] },
-        seats: 12000,
-        application_portal: "https://online-inspire.gov.in",
-      },
-      {
-        scholarship_name: "National Means Cum Merit Scholarship (NMMS)",
-        type: "Income-Based",
-        administered_by: "Ministry of Education",
-        benefits: { tuition_fee_limit: 0, maintenance_amount: 12000 },
-        eligibility: { min_class: 9, max_class: 12, income_limit: 350000, category: "Any", gender: "Any", domicile: "India" },
-        courses_covered: ["School Education"],
-        application: { start_date: "2025-06-01", end_date: "2025-08-10", required_documents: ["Income Certificate", "School ID"] },
-        seats: 1000,
-        application_portal: "https://scholarships.gov.in",
-      },
-      {
-        scholarship_name: "Disability Scholarship for Engineering Students",
-        type: "Disability-Based",
-        administered_by: "Department of Empowerment of Persons with Disabilities",
-        benefits: { tuition_fee_limit: 40000, maintenance_amount: 15000 },
-        eligibility: { min_class: 12, max_class: "UG", income_limit: 500000, category: "Any", gender: "Any", domicile: "India", disability_required: true },
-        courses_covered: ["Engineering", "B.E", "B.Tech"],
-        application: { start_date: "2025-02-01", end_date: "2025-04-30", required_documents: ["Disability Certificate", "Marksheet"] },
-        seats: 500,
-        application_portal: "https://disability.scholarships.in",
-      },
-      {
-        scholarship_name: "Post Matric Scholarship for SC Students",
-        type: "Minority/Community Based",
-        administered_by: "Ministry of Social Justice & Empowerment",
-        benefits: { tuition_fee_limit: 50000, maintenance_amount: 8000 },
-        eligibility: { min_class: 11, max_class: "UG/PG", income_limit: 250000, category: "SC", gender: "Any", domicile: "India", disability_required: false },
-        courses_covered: ["Engineering", "Medical", "Arts", "Science"],
-        application: { start_date: "2025-01-05", end_date: "2025-03-30", required_documents: ["Caste Certificate", "Income Certificate", "Aadhar"] },
-        seats: 10000,
-        application_portal: "https://scholarships.gov.in",
-      },
-      {
-        scholarship_name: "Inspire Scholarship (SHE)",
-        type: "Merit-Based",
-        administered_by: "Department of Science & Technology",
-        benefits: { tuition_fee_limit: 0, maintenance_amount: 80000, other_benefits: "Annual Scholarship for Science stream" },
-        eligibility: { min_class: 12, max_class: "UG", min_percentage: 85, category: "General", gender: "Any", domicile: "India" },
-        courses_covered: ["B.Sc", "M.Sc", "Research"],
-        application: { start_date: "2025-01-15", end_date: "2025-03-01", required_documents: ["Aadhar", "Marksheet", "Bank Passbook"] },
-        seats: 12000,
-        application_portal: "https://online-inspire.gov.in",
-      },
-      {
-        scholarship_name: "State Government Engineering Scholarship",
-        type: "Engineering",
-        administered_by: "State Education Department",
-        benefits: { tuition_fee_limit: 60000, maintenance_amount: 10000 },
-        eligibility: { min_class: 12, max_class: "UG", min_percentage: 80, income_limit: 400000, category: "Any", gender: "Any", domicile: "Tamil Nadu" },
-        courses_covered: ["B.E", "B.Tech"],
-        application: { start_date: "2025-05-01", end_date: "2025-07-30", required_documents: ["Marksheet", "Income Certificate", "Community Certificate"] },
-        seats: 3000,
-        application_portal: "https://tn.gov.in/scholarships",
-      },
-      {
-        scholarship_name: "National Means Cum Merit Scholarship (NMMS)",
-        type: "Income-Based",
-        administered_by: "Ministry of Education",
-        benefits: { tuition_fee_limit: 0, maintenance_amount: 12000 },
-        eligibility: { min_class: 9, max_class: 12, income_limit: 350000, category: "Any", gender: "Any", domicile: "India" },
-        courses_covered: ["School Education"],
-        application: { start_date: "2025-06-01", end_date: "2025-08-10", required_documents: ["Income Certificate", "School ID"] },
-        seats: 1000,
-        application_portal: "https://scholarships.gov.in",
-      },
-      {
-        scholarship_name: "National Scheme of Incentive for Girls",
-        type: "Women's College",
-        administered_by: "Ministry of Women & Child Development",
-        benefits: { tuition_fee_limit: 20000, maintenance_amount: 20000 },
-        eligibility: { min_class: 9, max_class: 12, income_limit: 250000, category: "Any", gender: "Female", domicile: "India" },
-        courses_covered: ["School Education"],
-        application: { start_date: "2025-04-01", end_date: "2025-06-15", required_documents: ["Birth Certificate", "Income Certificate"] },
-        seats: 5000,
-        application_portal: "https://scholarships.gov.in",
-      },
-      {
-        scholarship_name: "Central Government Law Scholarship",
-        type: "Merit-Based",
-        administered_by: "Central Government Department of Education",
-        benefits: { tuition_fee_limit: 40000, maintenance_amount: 10000 },
-        eligibility: { min_class: 12, max_class: "UG", min_percentage: 75, category: "Any", gender: "Any", domicile: "India" },
-        courses_covered: ["Law"],
-        application: { start_date: "2025-03-01", end_date: "2025-05-30", required_documents: ["Marksheet", "Aadhar"] },
-        seats: 2500,
-        application_portal: "https://centralgov.scholarships.in",
-      },
-      
-    ];
-
-    setScholarships(dummyScholarships);
-  },
-   []);
-
-  const toggleExpand = (idx) => {
-    setExpanded((prev) => ({ ...prev, [idx]: !prev[idx] }));
   };
-  
 
-  // FILTERED SCHOLARSHIPS
-  const filteredScholarships = scholarships
-    .filter((s) => s.scholarship_name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .filter((s) => (selectedStream === "All Stream" ? true : s.courses_covered.includes(selectedStream)))
-    .filter((s) => {
-      switch (selectedCriteria) {
-        case "All Criteria":
-          return true;
-        case "Women's College":
-          return s.eligibility.gender === "Female";
-        case "Minority/Community Based":
-          return ["SC", "ST", "OBC", "Minority"].includes(s.eligibility.category);
-        case "Central Government":
-          return s.administered_by.includes("Central");
-        case "State Government":
-          return s.administered_by.includes("State");
-        case "Income-Based":
-          return !!s.eligibility.income_limit;
-        case "Disability-Based":
-          return s.eligibility.disability_required;
-        case "Merit-Based":
-          return !!s.eligibility.min_percentage;
-        default:
-          return true;
-      }
-    });
-
-    if (checking) return null;
+  if (checking) return null;
 
   return (
     <>
-    {/* 🔒 PROFILE INCOMPLETE OVERLAY */}
-{!canAccess && (
-  <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
-    <div className="bg-white rounded-xl p-6 text-center max-w-md shadow-xl">
-      <h2 className="text-xl font-bold mb-2">Profile Incomplete</h2>
-
-      <p className="text-gray-600 mb-4">
-        Please complete your {qualification === "10" ? "10th" : "12th"} profile to view examinations.
-      </p>
-
-      <div className="flex justify-center gap-4">
-        <button
-          onClick={() => navigate("/profile")}
-          className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition"
-        >
-          Go to Profile Setup
-        </button>
-
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="bg-gray-300 text-gray-800 px-5 py-2 rounded-lg hover:bg-gray-400 transition"
-        >
-          Back
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
-    <div className="flex flex-col min-h-screen">
-      {/* HERO */}
-      <section
-        ref={heroRef}
-        className="relative bg-gradient-to-r from-blue-600 to-indigo-600
-        text-white py-20 px-6 md:px-16 rounded-b-3xl overflow-hidden shadow-lg"
-      >
-        {/* Floating shapes */}
-        <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
-        <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
-        <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
-        <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
-
-        {/* Content */}
-        <div className="relative z-10 max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-3">
-            <span className="animate-bounce inline-grid">🎓</span> Scholarships
-          </h1>
-           
-          
-          <p className="text-lg opacity-90 max-w-2xl mx-auto">
-            Explore scholarships that align with your academic goals and financial needs.
-          </p>
+      {/* 🔒 PROFILE INCOMPLETE OVERLAY */}
+      {!canAccess && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl p-6 text-center max-w-md shadow-xl">
+            <h2 className="text-xl font-bold mb-2">Profile Incomplete</h2>
+            <p className="text-gray-600 mb-4">
+              Please complete your profile to view scholarships.
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => navigate("/profile")}
+                className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Go to Profile
+              </button>
+            </div>
+          </div>
         </div>
+      )}
 
-        <Sparkles className="absolute top-10 right-10 w-16 h-16 text-white opacity-20 animate-spin-slow" />
-      </section>
+      <div className="flex flex-col min-h-screen bg-slate-50 font-[Poppins]">
+        {/* HERO */}
+        <header
+          ref={heroRef}
+          className="relative text-center py-20 bg-gradient-to-r from-[#5c3cf0] to-[#7a5cff] text-white shadow-lg overflow-hidden rounded-b-3xl"
+        >
+          <div className="relative z-10 max-w-3xl mx-auto px-4">
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-3 flex items-center justify-center gap-3">
+              <GraduationCap className="w-12 h-12 text-yellow-300" /> Scholarships
+            </h1>
+            
+          </div>
+        </header>
 
-      {/* Main Content */}
-      <main className="flex-grow">
-        <div className="space-y-10 px-8 py-6 max-w-7xl mx-auto">
-          <section>
-            {/* SEARCH + FILTER */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-3 px-2 md:px-4 mb-6">
+        {/* CONTROLS BAR */}
+        <div className="max-w-7xl mx-auto w-full px-6 -mt-8 relative z-20">
+          <div className="bg-white p-4 rounded-2xl shadow-lg border border-purple-100 flex flex-col xl:flex-row gap-4 items-center justify-between">
+            {/* SEARCH */}
+            <div className="flex items-center gap-3 w-full xl:w-1/3 bg-gray-50 px-4 py-3 rounded-xl border border-gray-200">
+              <Search className="w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search scholarships..."
-                className="border border-gray-300 rounded-lg p-2 w-[230px]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-transparent outline-none text-gray-700 w-full"
               />
-              <select className="border border-gray-300 rounded-lg p-2 w-[230px]" value={selectedStream} onChange={(e) => setSelectedStream(e.target.value)}>
-                {streams.map((stream, i) => (
-                  <option key={i} value={stream}>{stream}</option>
-                ))}
-              </select>
-              <select className="border border-gray-300 rounded-lg p-2 w-[230px]" value={selectedCriteria} onChange={(e) => setSelectedCriteria(e.target.value)}>
-                {specialCriteria.map((crit, i) => (
-                  <option key={i} value={crit}>{crit}</option>
-                ))}
-              </select>
             </div>
 
-            {/* SCHOLARSHIP CARDS */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredScholarships.map((s, idx) => (
-                <div key={idx} className="p-6 border rounded-xl shadow-sm hover:shadow-md bg-white transition-shadow">
-                  <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleExpand(idx)}>
-                    <h3 className="text-xl font-bold text-indigo-700">{s.scholarship_name}</h3>
-                    {expanded[idx] ? <ChevronUp className="w-5 h-5 text-gray-600" /> : <ChevronDown className="w-5 h-5 text-gray-600" />}
-                  </div>
+            {/* FILTERS ON THE RIGHT */}
+            <div className="flex flex-wrap md:flex-nowrap gap-2 w-full xl:w-auto">
+              {/* Type Filter */}
+              <select
+                className="px-4 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm outline-none focus:border-blue-500 cursor-pointer bg-white"
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+              >
+                <option value="All Types">All Types</option>
+                <option value="Merit">Merit Based</option>
+                <option value="Means">Means Based</option>
+                <option value="Minority">Minority</option>
+                <option value="Gender">Gender Specific</option>
+                <option value="Disability">Disability</option>
+              </select>
 
-                  <div className="mt-4 text-sm text-gray-700 space-y-1">
-                    <p><span className="font-medium">Start Date:</span> {s.application?.start_date || "N/A"}</p>
-                    <p><span className="font-medium">Last Date:</span> {s.application?.end_date || "N/A"}</p>
-                  </div>
+              {/* Gender Filter (Female / Any) */}
+              <select
+                className="px-4 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm outline-none focus:border-blue-500 cursor-pointer bg-white"
+                value={filterGender}
+                onChange={(e) => setFilterGender(e.target.value)}
+              >
+                <option value="All Genders">All Genders</option>
+                <option value="Female">Female</option>
+                <option value="Any">Any</option>
+              </select>
 
-                  <div className="mt-4">
-                    <span className="font-medium">Benefits:</span>
-                    <ul className="list-disc list-inside text-sm text-gray-700 space-y-1 mt-1">
-                      <li>Tuition Fee: ₹{s.benefits?.tuition_fee_limit?.toLocaleString()}</li>
-                      <li>Maintenance: ₹{s.benefits?.maintenance_amount?.toLocaleString()}</li>
-                      {s.benefits?.other_benefits && <li>{s.benefits.other_benefits}</li>}
-                    </ul>
-                  </div>
+              {/* Category Filter */}
+              <select
+                className="px-4 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm outline-none focus:border-blue-500 cursor-pointer bg-white"
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+              >
+                <option value="All Categories">All Categories</option>
+                <option value="General">General</option>
+                <option value="OBC">OBC</option>
+                <option value="SC">SC</option>
+                <option value="ST">ST</option>
+                <option value="Minority">Minority</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-                  {expanded[idx] && (
-                    <div className="mt-4 space-y-3 text-sm text-gray-700">
-                      <p><span className="font-medium">Type:</span> {s.type} | <span className="font-medium">By:</span> {s.administered_by}</p>
+        {/* CARD GRID */}
+        <div className="flex-1 px-6 py-12 max-w-7xl mx-auto w-full">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredList.map((s) => {
+              const status = getStatus(s.deadline);
+              const StatusIcon = status.icon;
+              const isPriority =
+                userData.firstPref &&
+                s.region &&
+                s.region.toLowerCase() === userData.firstPref.toLowerCase();
 
-                      <div>
-                        <span className="font-medium">Eligibility:</span>
-                        <ul className="list-disc list-inside">
-                          <li>Class: {s.eligibility?.min_class} – {s.eligibility?.max_class}</li>
-                          {s.eligibility?.min_percentage && <li>Minimum Percentage: {s.eligibility.min_percentage}%</li>}
-                          <li>Income Limit: ₹{s.eligibility?.income_limit?.toLocaleString()}</li>
-                          <li>Category: {s.eligibility?.category}</li>
-                          <li>Gender: {s.eligibility?.gender}</li>
-                          <li>Domicile: {s.eligibility?.domicile}</li>
-                          <li>Disability Required: {s.eligibility?.disability_required ? "Yes" : "No"}</li>
-                        </ul>
-                      </div>
-
-                      <p><span className="font-medium">Courses Covered:</span> {s.courses_covered?.join(", ")}</p>
-
-                      <div>
-                        <span className="font-medium">Required Documents:</span>
-                        <ul className="list-disc list-inside">{s.application?.required_documents?.map((doc, i) => <li key={i}>{doc}</li>)}</ul>
-                      </div>
-
-                      <p><span className="font-medium">Seats:</span> {s.seats}</p>
-
-                      <a href={s.application_portal} target="_blank" rel="noopener noreferrer">
-                        <button className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Apply Now</button>
-                      </a>
+              return (
+                <div
+                  key={s.id}
+                  className={`bg-white rounded-2xl border ${
+                    isPriority
+                      ? "border-blue-400 ring-2 ring-blue-50"
+                      : "border-gray-100"
+                  } p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full group relative`}
+                >
+                  {/* BADGE */}
+                  {s.region && s.region !== "India" && (
+                    <div
+                      className={`absolute top-0 right-0 ${
+                        isPriority ? "bg-blue-600" : "bg-gray-600"
+                      } text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl flex items-center gap-1 shadow-sm z-10`}
+                    >
+                      <MapPin className="w-3 h-3" /> {s.region}
                     </div>
                   )}
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-      </main>
 
-      <footer className="bg-gray-100 text-gray-600 text-center py-4 border-t border-gray-200 shadow-inner mt-auto">
-        © 2025 Career Website. All rights reserved.
-      </footer>
-    </div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="p-3 bg-blue-50 rounded-xl text-blue-600 group-hover:scale-110 transition">
+                      <IndianRupee className="w-6 h-6" />
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded text-[10px] font-bold border flex items-center gap-1 ${status.style}`}
+                    >
+                      <StatusIcon className="w-3 h-3" /> {status.text}
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl font-bold text-gray-800 leading-tight mb-1">
+                    {s.name}
+                  </h3>
+                  <p className="text-xs text-gray-500 font-medium mb-4 uppercase tracking-wide">
+                    {s.provider}
+                  </p>
+
+                  <div className="space-y-3 mb-6 text-sm text-gray-600 flex-grow">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-orange-500" />
+                      <span className="font-semibold text-gray-900">
+                        {s.amount_benefit}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-blue-500" />
+                      <span>
+                        Deadline:{" "}
+                        {new Date(s.deadline).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedSch(s)}
+                    className="w-full py-3 rounded-xl bg-gray-900 text-white font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2"
+                  >
+                    View Details <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {filteredList.length === 0 && (
+            <div className="text-center py-20">
+              <p className="text-gray-400 text-lg">No scholarships found.</p>
+              <button
+                onClick={() => {
+                  setFilterType("All Types");
+                  setFilterGender("All Genders");
+                  setFilterCategory("All Categories");
+                  setSearchTerm("");
+                }}
+                className="text-blue-600 font-bold mt-2 hover:underline"
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* === DETAILED MODAL === */}
+        {selectedSch && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setSelectedSch(null)}
+            ></div>
+            <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl animate-fade-in-up">
+              <div className="sticky top-0 bg-white border-b z-20">
+                <div className="bg-gradient-to-r from-[#5c3cf0] to-[#7a5cff] p-6 rounded-t-3xl text-white flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      {selectedSch.region !== "India" && (
+                        <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> {selectedSch.region}
+                        </span>
+                      )}
+                      <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-bold">
+                        {selectedSch.type}
+                      </span>
+                    </div>
+                    <h2 className="text-2xl font-bold">
+                      {selectedSch.name}
+                    </h2>
+                    <p className="text-sm opacity-90 mt-1">
+                      by {selectedSch.provider}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedSch(null)}
+                    className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-8 space-y-8">
+                <div className="bg-green-50 border border-green-100 p-4 rounded-2xl flex items-center gap-4">
+                  <div className="p-3 bg-green-100 rounded-full text-green-700">
+                    <IndianRupee className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-green-600 font-bold uppercase">
+                      Scholarship Value
+                    </p>
+                    <p className="text-xl font-bold text-green-900">
+                      {selectedSch.amount_benefit}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-blue-600" /> About Scheme
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {selectedSch.description}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="block text-xs text-gray-400 font-bold uppercase">
+                      Income Limit
+                    </span>
+                    <span className="text-sm font-semibold text-gray-800">
+                      {selectedSch.income_limit
+                        ? `₹${selectedSch.income_limit.toLocaleString()}`
+                        : "No Limit"}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="block text-xs text-gray-400 font-bold uppercase">
+                      Gender
+                    </span>
+                    <span className="text-sm font-semibold text-gray-800">
+                      {selectedSch.gender}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 col-span-2">
+                    <span className="block text-xs text-gray-400 font-bold uppercase mb-1">
+                      Eligible Categories
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedSch.category &&
+                        selectedSch.category.map((c) => (
+                          <span
+                            key={c}
+                            className="px-2 py-1 bg-white border border-gray-200 text-xs rounded text-gray-600"
+                          >
+                            {c}
+                          </span>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-800 mb-2 uppercase">
+                      Eligibility Criteria
+                    </h3>
+                    <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 text-xs text-orange-800">
+                      {selectedSch.eligibility_details}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-800 mb-2 uppercase">
+                      Documents Needed
+                    </h3>
+                    <ul className="text-xs text-gray-600 space-y-1 list-disc pl-4">
+                      {selectedSch.documents_needed &&
+                        selectedSch.documents_needed.map((doc) => (
+                          <li key={doc}>{doc}</li>
+                        ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t">
+                  <a
+                    href={selectedSch.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-gray-900 text-white font-bold hover:bg-gray-800 transition active:scale-95 shadow-xl shadow-gray-200"
+                  >
+                    Apply on Official Portal{" "}
+                    <ExternalLink className="w-5 h-5" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 }
