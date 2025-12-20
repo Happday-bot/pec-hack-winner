@@ -4,9 +4,7 @@ import { supabase } from "./supabase"; // adjust path
 
 export default function ProfileSetupBasic({ initialData, Email = null }) {
   const navigate = useNavigate();
-  
 
-  // ---------- EMPTY STRUCTURE ----------
   const emptyForm = {
     firstName: "",
     middleName: "",
@@ -22,34 +20,24 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
     Stream: ""
   };
 
-  // ---------- STATE ----------
   const [form, setForm] = useState(emptyForm);
 
-  // ---------- LOAD SAVED DATA (VIEW / EDIT) ----------
   useEffect(() => {
-    if (initialData) {
-      setForm({ ...emptyForm, ...initialData });
-    }
+    if (initialData) setForm({ ...emptyForm, ...initialData });
   }, [initialData]);
 
-  // ---------- HANDLERS ----------
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleNext = async (e) => {
-    console.log("Email prop:", Email);
-    console.log("Session email:", sessionStorage.getItem("signUpEmail"));
-    const email = Email || sessionStorage.getItem("signUpEmail")
-    if (!email) {
-      alert("Session expired. Please sign up again.");
-      return;
-    }
     e.preventDefault();
+    const email = Email || sessionStorage.getItem("signUpEmail");
+    if (!email) return alert("Session expired. Please sign up again.");
 
     const payload = {
-      email: email,
+      email,
       first_name: form.firstName,
       middle_name: form.middleName,
       last_name: form.lastName,
@@ -59,124 +47,116 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
       gender: form.gender,
       stream: form.Stream
     };
-    sessionStorage.setItem("qualification",form.qualification)
-    sessionStorage.setItem("stream",form.Stream)
+
+    sessionStorage.setItem("qualification", form.qualification);
+    sessionStorage.setItem("stream", form.Stream);
+
     const { error } = await supabase
       .from("profiles")
       .update(payload)
       .eq("email", email);
 
-    if (error) {
-      console.error("❌ Profile save failed:", error.message);
-      alert("Failed to save profile. Try again.");
-      return;
-    }
+    if (error) return alert("Failed to save profile. Try again.");
 
-    
-    // 👉 Continue flow (unchanged)
-    navigate("/aptitude-landing", {
-      state: { qualification: form.qualification }
-    });
+    navigate("/aptitude-landing", { state: { qualification: form.qualification } });
   };
 
-
-  // ---------- UI ----------
   return (
-    <div className="max-w-5xl mx-auto bg-white shadow-lg rounded-xl p-10">
-      <h1 className="text-2xl font-bold mb-8 text-center">
+    <div className="max-w-5xl mx-auto bg-white shadow-lg rounded-xl p-10 border border-[#C7CBFF]">
+      <h1 className="text-2xl font-bold mb-8 text-center text-[#444EE7]">
         Profile Setup – General Info
       </h1>
 
       <form onSubmit={handleNext}>
         <div className="grid grid-cols-1 gap-y-6">
 
-  <Input
-    label="First Name *"
-    name="firstName"
-    value={form.firstName}
-    onChange={handleChange}
-    required
-  />
+          <Input
+            label="First Name *"
+            name="firstName"
+            value={form.firstName}
+            onChange={handleChange}
+            required
+          />
 
-  <Input
-    label="Middle Name"
-    name="middleName"
-    value={form.middleName}
-    onChange={handleChange}
-  />
+          <Input
+            label="Middle Name"
+            name="middleName"
+            value={form.middleName}
+            onChange={handleChange}
+          />
 
-  <Input
-    label="Last Name *"
-    name="lastName"
-    value={form.lastName}
-    onChange={handleChange}
-    required
-  />
+          <Input
+            label="Last Name *"
+            name="lastName"
+            value={form.lastName}
+            onChange={handleChange}
+            required
+          />
 
-  <Input
-    label="Date of Birth *"
-    type="date"
-    name="dob"
-    value={form.dob}
-    onChange={handleChange}
-    required
-  />
+          <Input
+            label="Date of Birth *"
+            type="date"
+            name="dob"
+            value={form.dob}
+            onChange={handleChange}
+            required
+          />
 
-  <Input
-    label="Phone Number *"
-    name="phone"
-    value={form.phone}
-    onChange={handleChange}
-    required
-  />
+          <Input
+            label="Phone Number *"
+            name="phone"
+            value={form.phone}
+            onChange={handleChange}
+            required
+          />
 
-  <Select
-    label="Qualification *"
-    name="qualification"
-    value={form.qualification}
-    onChange={handleChange}
-    options={[
-      { label: "Select Qualification", value: "" },
-      { label: "10th", value: "10" },
-      { label: "12th", value: "12" }
-    ]}
-  />
+          <Select
+            label="Qualification *"
+            name="qualification"
+            value={form.qualification}
+            onChange={handleChange}
+            options={[
+              { label: "Select Qualification", value: "" },
+              { label: "10th", value: "10" },
+              { label: "12th", value: "12" }
+            ]}
+          />
 
-  {/* ✅ Stream appears ONLY for 12th */}
-  {form.qualification === "12" && (
-    <Select
-      label="Stream *"
-      name="Stream"
-      value={form.Stream}
-      onChange={handleChange}
-      options={[
-        { label: "Select Stream", value: "" },
-        { label: "PCMB", value: "PCMB" },
-        { label: "PCM", value: "PCM" },
-        { label: "PCB", value: "PCB" },
-        { label: "Arts/Commerce", value: "Arts/Commerce" }
-      ]}
-    />
-  )}
+          {form.qualification === "12" && (
+            <Select
+              label="Stream *"
+              name="Stream"
+              value={form.Stream}
+              onChange={handleChange}
+              options={[
+                { label: "Select Stream", value: "" },
+                { label: "PCMB", value: "PCMB" },
+                { label: "PCM", value: "PCM" },
+                { label: "PCB", value: "PCB" },
+                { label: "Arts/Commerce", value: "Arts/Commerce" }
+              ]}
+            />
+          )}
 
-  <Select
-    label="Gender *"
-    name="gender"
-    value={form.gender}
-    onChange={handleChange}
-    options={[
-      { label: "Select Gender", value: "" },
-      { label: "Male", value: "male" },
-      { label: "Female", value: "female" },
-      { label: "Other", value: "other" }
-    ]}
-  />
+          <Select
+            label="Gender *"
+            name="gender"
+            value={form.gender}
+            onChange={handleChange}
+            options={[
+              { label: "Select Gender", value: "" },
+              { label: "Male", value: "male" },
+              { label: "Female", value: "female" },
+              { label: "Other", value: "other" }
+            ]}
+          />
 
-</div>
+        </div>
+
         <div className="text-center">
           <button
             type="submit"
-            className="mt-10 px-10 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="mt-10 px-10 py-3 bg-gradient-to-r from-[#444EE7] to-[#6B74FF] text-white rounded-lg hover:opacity-90 transition"
           >
             Save & Continue
           </button>
@@ -189,15 +169,15 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
 /* ---------- SMALL REUSABLE COMPONENTS ---------- */
 const Input = ({ label, ...props }) => (
   <div className="flex flex-col">
-    <label>{label}</label>
-    <input {...props} className="border rounded-lg p-2" />
+    <label className="mb-1 text-[#444EE7] font-medium mb-2">{label}</label>
+    <input {...props} className="border border-[#C7CBFF] rounded-lg p-2" />
   </div>
 );
 
 const Select = ({ label, options, ...props }) => (
   <div className="flex flex-col">
-    <label>{label}</label>
-    <select {...props} className="border rounded-lg p-2">
+    <label className="mb-1 text-[#444EE7] font-medium">{label}</label>
+    <select {...props} className="border border-[#C7CBFF] rounded-lg p-2">
       {options.map(o => (
         <option key={o.value} value={o.value}>{o.label}</option>
       ))}
