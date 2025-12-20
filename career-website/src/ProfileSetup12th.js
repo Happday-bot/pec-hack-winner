@@ -1,83 +1,66 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase";
-import { useNavigate } from "react-router-dom";
+
+/* ================= CONSTANTS ================= */
+
+const allSubjects = [
+  "English", "Physics", "Chemistry", "Mathematics", "Biology",
+  "Computer Science", "Business Studies", "Accountancy", "Economics"
+];
+
+const streamOptions = ["PCMB", "PCM", "PCB", "Commerce", "Arts"];
+
+const interestSubjects = [
+  "Science", "Mathematics", "ComputerScience", "SocialScience", "Languages", "Arts", "Commerce"
+];
+
+const ambitionOptions = [
+  "Doctor", "Engineer", "Scientist", "Lawyer", "Entrepreneur", "Designer", "Others"
+];
+
+const emptyForm = {
+  medium: "",
+  compulsoryLanguage: "",
+  stream: "",
+  interest: "",
+  ambition: "",
+  otherAmbition: "",
+  neetScore: "",
+  jeeScore: "",
+  preferredLocations: ["", "", "", "", ""] // restored location array
+};
+
+/* ================= COMPONENT ================= */
 
 export default function ProfileSetup12th({ onComplete, initialData, email }) {
-  const navigate = useNavigate();
-
-  /* ================= OPTIONS ================= */
-  const allSubjects = [
-    "English",
-    "Physics",
-    "Chemistry",
-    "Mathematics",
-    "Biology",
-    "Computer Science",
-    "Business Studies",
-    "Accountancy",
-    "Economics",
-    "Computer Application",
-  ];
-
-  const streamOptions = ["PCMB", "PCM", "PCB", "Arts", "Commerce"];
-
-  const interestSubjects = [
-    "Science",
-    "Mathematics",
-    "ComputerScience",
-    "Arts",
-    "Commerce",
-  ];
-
-  const ambitionOptions = [
-    "Doctor",
-    "Engineer",
-    "Teacher",
-    "Scientist",
-    "Lawyer",
-    "Artist",
-    "Entrepreneur",
-    "Others",
-  ];
-
-  /* ================= STATE ================= */
-  const emptyForm = {
-    medium: "",
-    compulsoryLanguage: "",
-    stream: "",
-    interest: "",
-    ambition: "",
-    otherAmbition: "",
-    cutoff: "",
-     neetScore: "",     // ✅ NEW
-  jeeScore: "",      // ✅ NEW
-    preferredLocations: ["", "", "", "", ""], // NEW
-  };
-
   const [form, setForm] = useState(emptyForm);
   const [selectedSubjects, setSelectedSubjects] = useState([]);
 
   /* ================= LOAD EXISTING DATA ================= */
   useEffect(() => {
-    if (initialData) {
-      setForm({
-        ...emptyForm,
-        medium: initialData.medium || "",
-        compulsoryLanguage: initialData.Language || "", // map Language → compulsoryLanguage
-        stream: initialData.stream || "",
-        interest: initialData.interest || "",
-        ambition: initialData.ambition || "",
-        otherAmbition: initialData.ambition && !ambitionOptions.includes(initialData.ambition) ? initialData.ambition : "",
-        cutoff: initialData.cutoff || ""
-      });
+    if (!initialData) return;
+
+    setForm({
+      ...emptyForm,
+      medium: initialData.medium || "",
+      compulsoryLanguage: initialData.Language || "",
+      stream: initialData.stream || "",
+      interest: initialData.interest || "",
+      ambition: ambitionOptions.includes(initialData.ambition) ? initialData.ambition : "Others",
+      otherAmbition: !ambitionOptions.includes(initialData.ambition) ? initialData.ambition : "",
+      neetScore: initialData.neet_score || "",
+      jeeScore: initialData.jee_score || "",
+      preferredLocations: initialData.preferred_locations || ["", "", "", "", ""]
+    });
 
     setSelectedSubjects(initialData.subjects || []);
   }, [initialData]);
 
   /* ================= HANDLERS ================= */
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const toggleSubject = (subject) => {
@@ -94,26 +77,22 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
     setSelectedSubjects(updated);
   };
 
+  // Restored: Handle changes for the 5 location inputs
   const handleLocationChange = (index, value) => {
-  setForm(prev => {
-    const updated = [...prev.preferredLocations];
-    updated[index] = value;
-    return { ...prev, preferredLocations: updated };
-  });
-};
-
+    setForm((prev) => {
+      const updated = [...prev.preferredLocations];
+      updated[index] = value;
+      return { ...prev, preferredLocations: updated };
+    });
+  };
 
   /* ================= SUBMIT ================= */
+
   const handleFinish = async (e) => {
     e.preventDefault();
 
-    if (
-      !form.medium ||
-      !form.compulsoryLanguage ||
-      !form.stream ||
-      !form.interest ||
-      !form.ambition
-    ) {
+    // Basic Validation
+    if (!form.medium || !form.compulsoryLanguage || !form.stream || !form.interest || !form.ambition) {
       alert("Please fill all required fields");
       return;
     }
@@ -123,99 +102,82 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
       return;
     }
 
-    for (const s of selectedSubjects) {
-      if (!s.marks) {
-        alert(`Enter marks for ${s.name}`);
-        return;
-      }
-    }
-
-    if (!email) {
-      alert("Email missing. Please login again.");
+    // Ensure at least 3 locations are filled (optional rule, you can remove if needed)
+    const filledLocations = form.preferredLocations.filter((l) => l.trim() !== "");
+    if (filledLocations.length < 3) {
+      alert("Please enter at least 3 preferred locations");
       return;
     }
 
-    const payload = {
+    const finalData = {
+      email: email,
       medium: form.medium,
       Language: form.compulsoryLanguage,
       stream: form.stream,
-      subjects: selectedSubjects,
       interest: form.interest,
+      subjects: selectedSubjects, 
       ambition: form.ambition === "Others" ? form.otherAmbition : form.ambition,
-      email // from parent
+      neet_score: form.neetScore ? parseFloat(form.neetScore) : null,
+      jee_score: form.jeeScore ? parseFloat(form.jeeScore) : null,
+      preferred_locations: form.preferredLocations // Saving full array [city1, city2...]
     };
-    const filledLocations = form.preferredLocations.filter(
-  loc => loc.trim() !== ""
-);
 
-if (filledLocations.length < 3) {
-  return alert("Please enter at least 3 preferred locations.");
-}
+    console.log("Saving data to 12th_profile_data:", finalData);
 
+    try {
+      const { error } = await supabase
+        .from("12th_profile_data")
+        .upsert(finalData, { onConflict: "email" });
 
-    const { error } = await supabase
-      .from("12th_profile_data")
-      .upsert(payload, { onConflict: "email" });
+      if (error) throw error;
 
-    if (error) {
-      console.error(error);
-      alert("❌ Failed to save 12th profile");
-      return;
+      alert("✅ 12th profile saved successfully");
+      if (onComplete) onComplete(finalData);
+    } catch (err) {
+      console.error("Save error:", err);
+      alert(`❌ Failed to save profile: ${err.message}`);
     }
-
-    /* ===== STORE FOR APTITUDE & COURSES ===== */
-    sessionStorage.setItem("qualification", "12th");
-    sessionStorage.setItem("interest", form.interest);
-    sessionStorage.setItem("stream", form.stream);
-    sessionStorage.setItem("profileCompleted", "true");
-
-    alert("✅ 12th profile saved successfully!");
-
-    onComplete?.(payload);
-
-    navigate("/test"); // aptitude test
   };
 
-  /* ================= UI ================= */
   return (
     <form
       onSubmit={handleFinish}
       className="max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-8 space-y-6"
     >
-      <h2 className="text-2xl font-bold">Profile Setup – 12th</h2>
+      <h2 className="text-2xl font-bold text-gray-800">Profile Setup – 12th</h2>
 
-      {/* Medium */}
-      <select
-        name="medium"
-        value={form.medium}
-        onChange={handleChange}
-        className="w-full border p-2 rounded"
-      >
-        <option value="">Medium *</option>
-        <option>English</option>
-        <option>Urdu</option>
-        <option>Hindi</option>
-      </select>
+      {/* Medium & Language */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <select
+          name="medium"
+          value={form.medium}
+          onChange={handleChange}
+          className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+        >
+          <option value="">Medium *</option>
+          <option>English</option>
+          <option>Hindi</option>
+          <option>Urdu</option>
+        </select>
 
-      {/* Language */}
-      <select
-        name="compulsoryLanguage"
-        value={form.compulsoryLanguage}
-        onChange={handleChange}
-        className="w-full border p-2 rounded"
-      >
-        <option value="">Language *</option>
-        <option>English</option>
-        <option>Urdu</option>
-        <option>Hindi</option>
-      </select>
+        <select
+          name="compulsoryLanguage"
+          value={form.compulsoryLanguage}
+          onChange={handleChange}
+          className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+        >
+          <option value="">Language *</option>
+          <option>Hindi</option>
+          <option>Urdu</option>
+        </select>
+      </div>
 
-      {/* Stream */}
+      {/* Stream Selection */}
       <select
         name="stream"
         value={form.stream}
         onChange={handleChange}
-        className="w-full border p-2 rounded"
+        className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
       >
         <option value="">Stream *</option>
         {streamOptions.map((s) => (
@@ -223,62 +185,72 @@ if (filledLocations.length < 3) {
         ))}
       </select>
 
-      {/* Subjects */}
-      <h3 className="font-semibold">Subjects</h3>
-      <div className="flex flex-wrap gap-2">
-        {allSubjects.map((sub) => (
-          <button
-            type="button"
-            key={sub}
-            onClick={() => toggleSubject(sub)}
-            className={`px-4 py-2 rounded-full ${
-              selectedSubjects.some((s) => s.name === sub)
-                ? "bg-green-600 text-white"
-                : "border"
-            }`}
-          >
-            {sub}
-          </button>
-        ))}
+      {/* Subjects Selection */}
+      <div>
+        <h3 className="font-semibold mb-2">Subjects</h3>
+        <div className="flex flex-wrap gap-2">
+          {allSubjects.map((sub) => (
+            <button
+              type="button"
+              key={sub}
+              onClick={() => toggleSubject(sub)}
+              className={`px-4 py-2 rounded-full text-sm transition ${
+                selectedSubjects.some((s) => s.name === sub)
+                  ? "bg-green-600 text-white"
+                  : "bg-gray-100 text-gray-600 border hover:bg-gray-200"
+              }`}
+            >
+              {sub}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {selectedSubjects.map((s, i) => (
-        <div key={i} className="flex gap-2">
-          <span className="w-1/2 font-bold">{s.name}</span>
-          <input
-            type="number"
-            value={s.marks}
-            onChange={(e) => handleMarksChange(i, e.target.value)}
-            className="w-1/2 border p-2 rounded"
-          />
+      {/* Subject Marks Input */}
+      {selectedSubjects.length > 0 && (
+        <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm font-medium text-gray-500">Enter Marks:</p>
+          {selectedSubjects.map((s, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <span className="w-1/2 text-sm font-bold text-gray-700">{s.name}</span>
+              <input
+                type="number"
+                value={s.marks}
+                onChange={(e) => handleMarksChange(i, e.target.value)}
+                placeholder="Marks"
+                className="w-1/2 border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+          ))}
         </div>
-      ))}
+      )}
 
-      {/* Interest */}
-      <select
-        name="interest"
-        value={form.interest}
-        onChange={handleChange}
-        className="w-full border p-2 rounded"
-      >
-        <option value="">Interest *</option>
-        {interestSubjects.map((i) => (
-          <option key={i}>{i}</option>
-        ))}
-      </select>
+      {/* Interest & Ambition */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <select
+          name="interest"
+          value={form.interest}
+          onChange={handleChange}
+          className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+        >
+          <option value="">Interest *</option>
+          {interestSubjects.map((i) => (
+            <option key={i}>{i}</option>
+          ))}
+        </select>
 
-      {/* Ambition */}
-      <select
-        name="ambition"
-        value={form.ambition}
-        onChange={handleChange}
-        className="w-full border p-2 rounded"
-      >
-        <option value="">Ambition *</option>
-        {ambitionOptions.map((a) => (
-          <option key={a}>{a}</option>
-        ))}
-      </select>
+        <select
+          name="ambition"
+          value={form.ambition}
+          onChange={handleChange}
+          className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+        >
+          <option value="">Ambition *</option>
+          {ambitionOptions.map((a) => (
+            <option key={a}>{a}</option>
+          ))}
+        </select>
+      </div>
 
       {form.ambition === "Others" && (
         <input
@@ -286,71 +258,31 @@ if (filledLocations.length < 3) {
           name="otherAmbition"
           value={form.otherAmbition}
           onChange={handleChange}
-          className="w-full border p-2 rounded"
+          className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
           placeholder="Specify ambition"
         />
       )}
-    {/* Preferred Locations */}
-<div>
-  <h3 className="font-semibold mb-2">
-    Preferred Locations (Any 3 Required)
-  </h3>
 
-  <div className="space-y-2">
-    {form.preferredLocations.map((loc, index) => (
-      <input
-        key={index}
-        type="text"
-        value={loc}
-        onChange={(e) => handleLocationChange(index, e.target.value)}
-        className="w-full border p-2 rounded"
-        placeholder={`Preferred Location ${index + 1}${index < 3 ? " *" : ""}`}
-      />
-    ))}
-  </div>
-</div>
-{/* NEET / JEE (Optional) */}
-<div className="space-y-4">
+      {/* Restored Preferred Locations */}
+      <div>
+        <h3 className="font-semibold mb-2">Preferred Locations (Top 5 Cities)</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {form.preferredLocations.map((loc, index) => (
+            <input
+              key={index}
+              type="text"
+              placeholder={`Location ${index + 1}`}
+              value={loc}
+              onChange={(e) => handleLocationChange(index, e.target.value)}
+              className="border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          ))}
+        </div>
+      </div>
 
-  {/* NEET */}
-  <div className="flex items-center gap-4">
-    <label className="w-32 font-semibold">
-      NEET Score
-    </label>
-    <input
-      type="number"
-      name="neetScore"
-      value={form.neetScore}
-      onChange={handleChange}
-      className="flex-1 border p-2 rounded"
-      placeholder="If applicable"
-    />
-  </div>
-
-  {/* JEE */}
-  <div className="flex items-center gap-4">
-    <label className="w-32 font-semibold">
-      JEE Score
-    </label>
-    <input
-      type="number"
-      name="jeeScore"
-      value={form.jeeScore}
-      onChange={handleChange}
-      className="flex-1 border p-2 rounded"
-      placeholder="If applicable"
-    />
-  </div>
-
-</div>
-
-
-
-      <button className="bg-blue-600 text-white px-6 py-2 rounded">
+      <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition shadow-md">
         Save & Finish
       </button>
     </form>
   );
 }
-
-
