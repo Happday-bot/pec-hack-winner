@@ -153,6 +153,7 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
         { label: "Select Stream", value: "" },
         { label: "PCMB", value: "PCMB" },
         { label: "PCM", value: "PCM" },
+        { label: "PCB", value: "PCB" },
         { label: "Arts/Commerce", value: "Arts/Commerce" }
       ]}
     />

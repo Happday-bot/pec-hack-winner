@@ -280,6 +280,37 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
         </div>
       </div>
 
+      {/* NEET & JEE Scores (All Streams) */}
+<div className="space-y-4">
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      NEET Score
+    </label>
+    <input
+      type="number"
+      name="neetScore"
+      value={form.neetScore}
+      onChange={handleChange}
+      placeholder="If applicable"
+      className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      JEE Score
+    </label>
+    <input
+      type="number"
+      name="jeeScore"
+      value={form.jeeScore}
+      onChange={handleChange}
+      placeholder="If applicable"
+      className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+    />
+  </div>
+</div>
+
       <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition shadow-md">
         Save & Finish
       </button>

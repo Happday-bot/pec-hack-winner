@@ -14,6 +14,8 @@ export default function SuggestedCourses() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [demandFilter, setDemandFilter] = useState("all"); 
+// values: "all" | "demand"
 
   // NORMALIZE QUALIFICATION
   const rawQual = sessionStorage.getItem("qualification");
@@ -61,7 +63,7 @@ export default function SuggestedCourses() {
               if (domainIds.length > 0) {
                 const { data: res } = await supabase
                   .from("courses")
-                  .select("*, domains(name)")
+                  .select("id, course_title, qualification, domain_id, demand, domains(name)")
                   .in("domain_id", domainIds)
                   .eq("qualification", qualification);
                 finalCourses = res || [];
@@ -85,7 +87,7 @@ export default function SuggestedCourses() {
             // 2. Fetch Courses specifically for 10th grade
             const coursesPromise = supabase
               .from("courses")
-              .select("*, domains(name)")
+              .select("id, course_title, qualification, domain_id, demand, domains(name)")
               .eq("qualification", "10th");
 
             // Execute both in parallel (mimicking UNION)
@@ -137,6 +139,20 @@ export default function SuggestedCourses() {
           // Currently filtering everything:
           finalCourses = finalCourses.filter(c => c.type === 'stream' || allowedIds.includes(c.id));
         }
+        // --- DEMAND FILTER ---
+if (demandFilter === "demand") {
+  finalCourses = finalCourses.filter(course => {
+    // For 10th eligible → show ONLY demand courses (hide streams)
+    if (qualification === "10th" && activeTab === "eligible") {
+      return course.type === "course" && course.demand === true;
+    }
+
+    // For all other cases
+    return course.demand === true || course.type === "stream";
+  });
+}
+
+
 
         setCourses(finalCourses);
       } catch (err) {
@@ -148,7 +164,7 @@ export default function SuggestedCourses() {
     };
 
     fetchCourses();
-  }, [email, qualification, activeTab, selectedCareer]);
+  }, [email, qualification, activeTab, selectedCareer,demandFilter]);
 
   // --- GROUPING LOGIC ---
   const filteredCourses = courses.filter(c => 
@@ -173,6 +189,7 @@ export default function SuggestedCourses() {
       
       {/* HERO */}
       <section ref={heroRef} className="bg-indigo-600 text-white py-16 px-6 rounded-b-[3rem] shadow-xl text-center">
+       
         <h1 className="text-4xl font-extrabold mb-2">Suggested Courses</h1>
         <p className="opacity-90">
           {activeTab === "interest" ? "Based on your Interests" : "Based on your Eligibility"}
@@ -210,18 +227,34 @@ export default function SuggestedCourses() {
                 activeTab === "eligible" ? "bg-indigo-600 text-white" : "text-gray-500 hover:bg-gray-50"
               }`}
             >
-              Eligible Courses
+              All Eligible Courses
             </button>
           </div>
 
-          <select
-            value={selectedCareer}
-            onChange={e => setSelectedCareer(e.target.value)}
-            className="p-3 rounded-xl border bg-white shadow-sm outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="all">All Career Goals</option>
-            {careers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <div className="flex gap-3">
+  {/* Career Goal Filter */}
+  <select
+    value={selectedCareer}
+    onChange={e => setSelectedCareer(e.target.value)}
+    className="p-3 rounded-xl border bg-white shadow-sm outline-none focus:ring-2 focus:ring-indigo-500"
+  >
+    <option value="all">All Career Goals</option>
+    {careers.map(c => (
+      <option key={c.id} value={c.id}>{c.name}</option>
+    ))}
+  </select>
+
+  {/* Demand Filter */}
+  <select
+    value={demandFilter}
+    onChange={e => setDemandFilter(e.target.value)}
+    className="p-3 rounded-xl border bg-white shadow-sm outline-none focus:ring-2 focus:ring-indigo-500"
+  >
+    <option value="all">All Courses</option>
+    <option value="demand">In Demand</option>
+  </select>
+</div>
+
         </div>
 
         {/* RESULTS - GROUPED BY DOMAIN */}
@@ -243,11 +276,11 @@ export default function SuggestedCourses() {
                     }`}
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <span className={`text-xs font-black px-2 py-1 rounded uppercase tracking-wider ${
+                      {/*<span className={`text-xs font-black px-2 py-1 rounded uppercase tracking-wider ${
                          course.type === 'stream' ? 'bg-indigo-200 text-indigo-800' : 'bg-indigo-50 text-indigo-700'
                       }`}>
                         {domainName}
-                      </span>
+                      </span>*/}
                       {course.demand && (
                         <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">
                           <Sparkles className="w-3 h-3 fill-emerald-700" />
@@ -268,12 +301,12 @@ export default function SuggestedCourses() {
                     )}
                     
                     <div className="mt-auto pt-4 border-t border-gray-50 flex justify-between items-center">
-                      <span className="text-xs text-indigo-400 font-bold uppercase tracking-wider">
+                      {/*<span className="text-xs text-indigo-400 font-bold uppercase tracking-wider">
                         {course.qualification}
-                      </span>
-                      <button className="text-sm font-bold text-indigo-600 hover:underline">
+                      </span>*/}
+                      {/*<button className="text-sm font-bold text-indigo-600 hover:underline">
                         View Details
-                      </button>
+                      </button>*/}
                     </div>
                   </div>
                 ))}

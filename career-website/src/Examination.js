@@ -240,6 +240,11 @@ export default function Examinations() {
 
       {/* HEADER */}
       <header ref={heroRef} className="relative text-center py-20 bg-gradient-to-r from-indigo-600 to-blue-500 text-white shadow-lg overflow-hidden rounded-b-3xl">
+         {/* Floating shapes */}
+        <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
+        <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
+        <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
+        <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
         <div className="relative z-10 max-w-4xl mx-auto px-4">
           <h1 className="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight flex items-center justify-center gap-4">
              <FileText className="w-10 h-10 md:w-14 md:h-14 text-yellow-300" /> 
@@ -250,6 +255,8 @@ export default function Examinations() {
              {userData.stream ? `Curated for ${userData.stream} Students` : "Find exams matching your profile"}
           </p>
         </div>
+        <Sparkles className="absolute top-10 right-10 w-16 h-16 opacity-20" />
+        
       </header>
 
       {/* CONTROLS */}
