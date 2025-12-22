@@ -263,17 +263,25 @@ export default function Scholarships() {
       )}
 
       <div className="flex flex-col min-h-screen bg-slate-50 font-[Poppins]">
+        
         {/* HERO */}
         <header
           ref={heroRef}
           className="relative text-center py-20 bg-gradient-to-r from-[#5c3cf0] to-[#7a5cff] text-white shadow-lg overflow-hidden rounded-b-3xl"
         >
+           {/* Floating shapes */}
+        <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
+        <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
+        <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
+        <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
           <div className="relative z-10 max-w-3xl mx-auto px-4">
             <h1 className="text-4xl md:text-5xl font-extrabold mb-3 flex items-center justify-center gap-3">
               <GraduationCap className="w-12 h-12 text-yellow-300" /> Scholarships
             </h1>
             
           </div>
+                  <Sparkles className="absolute top-10 right-10 w-16 h-16 opacity-20" />
+          
         </header>
 
         {/* CONTROLS BAR */}

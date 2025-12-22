@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
 
-function SignUp({onSignup}) {
+function SignUp({ onSignup }) {
     const [form, setForm] = useState({
         name: "",
         email: "",
@@ -51,8 +51,6 @@ function SignUp({onSignup}) {
             .eq("email", form.email)
             .maybeSingle();
 
-    
-
         if (checkError) {
             setErrors((prev) => ({
                 ...prev,
@@ -76,17 +74,15 @@ function SignUp({onSignup}) {
             password: form.password,
         });
 
-        console.log("Supabase signUp response:", { data, error });
-
         if (error) {
             setErrors((prev) => ({ ...prev, general: error.message }));
             setLoading(false);
             sessionStorage.clear();
             return;
-        } else {
-            sessionStorage.setItem("isAuthenticated", "true");
-            sessionStorage.setItem("signUpEmail", form.email);
         }
+
+        sessionStorage.setItem("isAuthenticated", "true");
+        sessionStorage.setItem("signUpEmail", form.email);
 
         const { error: profileError } = await supabase.from("profiles").insert({
             fullname: form.name,
@@ -101,22 +97,23 @@ function SignUp({onSignup}) {
             setLoading(false);
             return;
         }
+
         onSignup?.();
         navigate("/profile-setup-basic");
         setLoading(false);
     };
 
     return (
-        <div className="bg-white min-h-screen flex items-center justify-center">
-            <div className="bg-[#FEF9F2] p-20 rounded-3xl shadow-2xl w-full max-w-2xl border-2 border-[#8B5E34]">
-                <h2 className="text-4xl font-bold text-center mb-10 text-[#8B5E34]">
+        <div className="bg-[#EEF0FF] min-h-screen flex items-center justify-center">
+            <div className="bg-[#F5F6FF] p-20 rounded-3xl shadow-2xl w-full max-w-2xl border-2 border-[#C7CBFF]">
+                <h2 className="text-4xl font-bold text-center mb-10 text-[#444EE7]">
                     Sign Up
                 </h2>
 
                 <form onSubmit={handleSubmit}>
                     {/* Full Name */}
                     <div className="mb-8">
-                        <label className="block text-[#8B5E34] font-semibold mb-3">
+                        <label className="block text-[#444EE7] font-semibold mb-3">
                             Full Name
                         </label>
                         <input
@@ -124,24 +121,24 @@ function SignUp({onSignup}) {
                             name="name"
                             value={form.name}
                             onChange={handleChange}
-                            className={`shadow border rounded w-full py-5 px-6 text-lg bg-[#FEF9F2] focus:outline-none focus:ring-2
-                ${errors.name
+                            className={`shadow border rounded w-full py-5 px-6 text-lg bg-[#F5F6FF] focus:outline-none focus:ring-2
+                            ${
+                                errors.name
                                     ? "border-red-500 focus:ring-red-300"
-                                    : "border-[#8B5E34] focus:ring-[#A47148]"
-                                }`}
+                                    : "border-[#C7CBFF] focus:ring-[#6B74FF]"
+                            }`}
                         />
                         {errors.name && (
                             <div className="mt-2 bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg">
-                                <span className="font-bold">!</span>
+                                <span className="font-bold">!</span>{" "}
                                 <span>{errors.name}</span>
-
                             </div>
                         )}
                     </div>
 
                     {/* Email */}
                     <div className="mb-8">
-                        <label className="block text-[#8B5E34] font-semibold mb-3">
+                        <label className="block text-[#444EE7] font-semibold mb-3">
                             Email
                         </label>
                         <input
@@ -149,24 +146,24 @@ function SignUp({onSignup}) {
                             name="email"
                             value={form.email}
                             onChange={handleChange}
-                            className={`shadow border rounded w-full py-5 px-6 text-lg bg-[#FEF9F2] focus:outline-none focus:ring-2
-                ${errors.email
+                            className={`shadow border rounded w-full py-5 px-6 text-lg bg-[#F5F6FF] focus:outline-none focus:ring-2
+                            ${
+                                errors.email
                                     ? "border-red-500 focus:ring-red-300"
-                                    : "border-[#8B5E34] focus:ring-[#A47148]"
-                                }`}
+                                    : "border-[#C7CBFF] focus:ring-[#6B74FF]"
+                            }`}
                         />
                         {errors.email && (
                             <div className="mt-2 bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg">
-                                <span className="font-bold">!</span>
-                                <span>  {errors.email}</span>
-
+                                <span className="font-bold">!</span>{" "}
+                                <span>{errors.email}</span>
                             </div>
                         )}
                     </div>
 
                     {/* Password */}
                     <div className="mb-10">
-                        <label className="block text-[#8B5E34] font-semibold mb-3">
+                        <label className="block text-[#444EE7] font-semibold mb-3">
                             Password
                         </label>
                         <input
@@ -174,41 +171,45 @@ function SignUp({onSignup}) {
                             name="password"
                             value={form.password}
                             onChange={handleChange}
-                            className={`shadow border rounded w-full py-5 px-6 text-lg bg-[#FEF9F2] focus:outline-none focus:ring-2
-                ${errors.password
+                            className={`shadow border rounded w-full py-5 px-6 text-lg bg-[#F5F6FF] focus:outline-none focus:ring-2
+                            ${
+                                errors.password
                                     ? "border-red-500 focus:ring-red-300"
-                                    : "border-[#8B5E34] focus:ring-[#A47148]"
-                                }`}
+                                    : "border-[#C7CBFF] focus:ring-[#6B74FF]"
+                            }`}
                         />
                         {errors.password && (
                             <div className="mt-2 bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg">
-                                <span className="font-bold">!</span>
+                                <span className="font-bold">!</span>{" "}
                                 <span>{errors.password}</span>
                             </div>
                         )}
                     </div>
 
-                    {/* General error (user exists or other) */}
+                    {/* General error */}
                     {errors.general && (
-                        <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl text-center text-sm w-full">
+                        <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl text-center text-sm">
                             {errors.general}
                         </div>
                     )}
-
 
                     <div className="flex items-center justify-between mb-10">
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`bg-gradient-to-r from-[#8B5E34] to-[#A47148] text-white font-bold py-4 px-10 rounded-xl shadow-lg transition-transform text-lg ${loading ? "opacity-60 cursor-not-allowed" : "hover:scale-105"
-                                }`}
+                            className={`bg-gradient-to-r from-[#444EE7] to-[#6B74FF] text-white font-bold py-4 px-10 rounded-xl shadow-lg transition-transform text-lg
+                            ${
+                                loading
+                                    ? "opacity-60 cursor-not-allowed"
+                                    : "hover:scale-105"
+                            }`}
                         >
                             {loading ? "Signing Up..." : "Sign Up"}
                         </button>
 
                         <Link
                             to="/signin"
-                            className="font-semibold text-[#8B5E34] hover:text-[#A47148]"
+                            className="font-semibold text-[#444EE7] hover:text-[#6B74FF]"
                         >
                             Already have an account?
                         </Link>

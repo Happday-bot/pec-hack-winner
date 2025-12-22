@@ -12,6 +12,8 @@ export default function SuggestedCourses() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [demandFilter, setDemandFilter] = useState("all"); 
+// values: "all" | "demand"
 
   // NORMALIZE QUALIFICATION
   const rawQual = sessionStorage.getItem("qualification");
@@ -143,7 +145,7 @@ export default function SuggestedCourses() {
     };
 
     fetchCourses();
-  }, [email, qualification, activeTab, selectedCareer]);
+  }, [email, qualification, activeTab, selectedCareer,demandFilter]);
 
   // --- FILTERING & GROUPING ---
   const filteredCourses = courses.filter((c) =>
@@ -166,6 +168,7 @@ export default function SuggestedCourses() {
   return (
     <div className="min-h-screen bg-slate-50">
       <section ref={heroRef} className="bg-indigo-600 text-white py-16 px-6 rounded-b-[3rem] shadow-xl text-center">
+       
         <h1 className="text-4xl font-extrabold mb-2">Suggested Courses</h1>
         <p className="opacity-90">
           {activeTab === "interest" ? "Based on your Interests" : "Based on your Eligibility"}
@@ -200,7 +203,7 @@ export default function SuggestedCourses() {
                 activeTab === "eligible" ? "bg-indigo-600 text-white" : "text-gray-500 hover:bg-gray-50"
               }`}
             >
-              Eligible Courses
+              All Eligible Courses
             </button>
           </div>
 

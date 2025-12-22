@@ -131,14 +131,13 @@
 
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "./supabase"; // adjust path
+import { supabase } from "./supabase";
 
 function SignIn({ onLogin }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // ✅ NEW: error state
     const [errors, setErrors] = useState({
         email: "",
         password: "",
@@ -149,8 +148,6 @@ function SignIn({ onLogin }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // reset errors
         setErrors({ email: "", password: "", general: "" });
 
         if (!email) {
@@ -204,7 +201,6 @@ function SignIn({ onLogin }) {
             sessionStorage.setItem("userName", profileData?.fullname || "User");
             sessionStorage.setItem("userEmail", data.user.email);
             sessionStorage.setItem("qualification", profileData?.qualification);
-            console.log("User logged in:", profileData?.fullname);
 
             onLogin?.();
             navigate("/dashboard");
@@ -219,26 +215,29 @@ function SignIn({ onLogin }) {
     };
 
     return (
-        <div className="bg-white min-h-screen flex items-center justify-center">
-            <div className="bg-[#FEF9F2] p-20 rounded-3xl shadow-2xl w-full max-w-2xl border-2 border-[#8B5E34]">
-                <h2 className="text-4xl font-bold text-center mb-10 text-[#8B5E34]">
+        <div className="bg-[#EEF0FF] min-h-screen flex items-center justify-center">
+            <div className="bg-[#F5F6FF] p-20 rounded-3xl shadow-2xl w-full max-w-2xl border-2 border-[#C7CBFF]">
+                <h2 className="text-4xl font-bold text-center mb-10 text-[#444EE7]">
                     Sign In
                 </h2>
 
                 <form onSubmit={handleSubmit}>
+                    {/* EMAIL */}
                     <div className="mb-8">
-                        <label className="block text-[#8B5E34] text-base font-semibold mb-3">
+                        <label className="block text-[#444EE7] text-base font-semibold mb-3">
                             Email
                         </label>
+
                         <input
                             type="email"
                             placeholder="Email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className={`shadow appearance-none border rounded w-full py-5 px-6 text-lg bg-[#FEF9F2] focus:outline-none focus:ring-2
-    ${errors.email
-                                    ? "border-red-500 focus:ring-red-300"
-                                    : "border-[#8B5E34] focus:ring-[#A47148]"
+                            className={`shadow appearance-none border rounded w-full py-5 px-6 text-lg bg-[#F5F6FF] focus:outline-none focus:ring-2
+                                ${
+                                    errors.email
+                                        ? "border-red-500 focus:ring-red-300"
+                                        : "border-[#C7CBFF] focus:ring-[#6B74FF]"
                                 }`}
                         />
 
@@ -248,22 +247,24 @@ function SignIn({ onLogin }) {
                                 <span>{errors.email}</span>
                             </div>
                         )}
-
                     </div>
 
+                    {/* PASSWORD */}
                     <div className="mb-10">
-                        <label className="block text-[#8B5E34] text-base font-semibold mb-3">
+                        <label className="block text-[#444EE7] text-base font-semibold mb-3">
                             Password
                         </label>
+
                         <input
                             type="password"
                             placeholder="Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className={`shadow appearance-none border rounded w-full py-5 px-6 text-lg bg-[#FEF9F2] focus:outline-none focus:ring-2
-    ${errors.password
-                                    ? "border-red-500 focus:ring-red-300"
-                                    : "border-[#8B5E34] focus:ring-[#A47148]"
+                            className={`shadow appearance-none border rounded w-full py-5 px-6 text-lg bg-[#F5F6FF] focus:outline-none focus:ring-2
+                                ${
+                                    errors.password
+                                        ? "border-red-500 focus:ring-red-300"
+                                        : "border-[#C7CBFF] focus:ring-[#6B74FF]"
                                 }`}
                         />
 
@@ -273,19 +274,19 @@ function SignIn({ onLogin }) {
                                 <span>{errors.password}</span>
                             </div>
                         )}
-
                     </div>
 
+                    {/* GENERAL ERROR */}
                     {errors.general && (
                         <div className="mb-6 rounded-xl bg-red-100 border border-red-400 text-red-700 px-4 py-3 text-center text-sm font-medium">
                             {errors.general}
                         </div>
                     )}
 
-
+                    {/* ACTIONS */}
                     <div className="flex items-center justify-between">
                         <button
-                            className="bg-gradient-to-r from-[#8B5E34] to-[#A47148] hover:scale-105 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition-transform text-lg"
+                            className="bg-gradient-to-r from-[#444EE7] to-[#6B74FF] hover:scale-105 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition-transform text-lg"
                             type="submit"
                             disabled={loading}
                         >
@@ -294,7 +295,7 @@ function SignIn({ onLogin }) {
 
                         <Link
                             to="/signup"
-                            className="inline-block align-baseline font-semibold text-base text-[#8B5E34] hover:text-[#A47148]"
+                            className="inline-block align-baseline font-semibold text-base text-[#444EE7] hover:text-[#6B74FF]"
                         >
                             Create an account
                         </Link>

@@ -190,8 +190,11 @@ data.forEach((row) => {
         ref={heroRef}
         className="relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-20 px-6 rounded-b-3xl overflow-hidden"
       >
+         {/* Floating shapes */}
         <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
         <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
+        <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
+        <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
 
         <div className="relative z-10 text-center">
           <h1 className="text-4xl font-extrabold">📚 Explore E-Books</h1>
@@ -206,27 +209,35 @@ data.forEach((row) => {
       <main className="flex-grow bg-gray-50">
         <div className="max-w-6xl mx-auto px-6 py-10">
 
-          {/* SEARCH + CATEGORY */}
-          {!selectedSubject && (
-            <div className="flex flex-wrap gap-4 mb-8 justify-between">
-              <input
-                type="text"
-                placeholder="Search subjects..."
-                className="p-3 border rounded-lg w-60"
-                value={searchSubject}
-                onChange={(e) => setSearchSubject(e.target.value)}
-              />
+        {/* CONTROLS BAR */}
+<div className="max-w-7xl mx-auto w-full px-6 -mt-16 relative z-20">
+  <div className="bg-white p-6 rounded-2xl shadow-lg border border-purple-100 flex flex-col xl:flex-row gap-6 items-center justify-between">
 
-              <select
-                className="p-3 border rounded-lg w-48"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="12">12th</option>
-                <option value="college">College</option>
-              </select>
-            </div>
-          )}
+    {/* SEARCH + CATEGORY */}
+    {!selectedSubject && (
+      <div className="flex flex-wrap gap-6 justify-between w-full">
+        <input
+          type="text"
+          placeholder="Search subjects..."
+          className="p-3 border rounded-xl w-full md:w-80"
+          value={searchSubject}
+          onChange={(e) => setSearchSubject(e.target.value)}
+        />
+
+        <select
+          className="p-3 border rounded-xl w-full md:w-56"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          <option value="12">12th</option>
+          <option value="college">College</option>
+        </select>
+      </div>
+    )}
+
+  </div>
+</div>
+
 
           {/* BACK */}
           {selectedSubject && (

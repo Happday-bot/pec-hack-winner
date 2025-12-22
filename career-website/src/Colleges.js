@@ -217,6 +217,11 @@ export default function Colleges() {
 
       {/* SIMPLIFIED HERO */}
       <section ref={heroRef} className="bg-indigo-600 text-white py-20 px-6 rounded-b-[3rem] shadow-xl text-center relative overflow-hidden">
+         {/* Floating shapes */}
+        <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
+        <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
+        <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
+        <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
         <Sparkles className="absolute top-10 right-10 w-12 h-12 text-white/20 animate-spin-slow" />
         <div className="relative z-10 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-8 flex items-center justify-center gap-3">
