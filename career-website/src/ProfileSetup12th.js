@@ -8,6 +8,17 @@ const allSubjects = [
   "Computer Science", "Business Studies", "Accountancy", "Economics"
 ];
 
+const indianStates = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+  "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+  "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Jammu & Kashmir",
+  "Ladakh","Puducherry", "Chandigarh"
+];
+
+
 const streamOptions = ["PCMB", "PCM", "PCB", "Commerce", "Arts"];
 
 const interestSubjects = [
@@ -265,20 +276,23 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
 
       {/* Restored Preferred Locations */}
       <div>
-        <h3 className="font-semibold mb-2">Preferred Locations (Top 5 Cities)</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {form.preferredLocations.map((loc, index) => (
-            <input
-              key={index}
-              type="text"
-              placeholder={`Location ${index + 1}`}
-              value={loc}
-              onChange={(e) => handleLocationChange(index, e.target.value)}
-              className="border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          ))}
-        </div>
-      </div>
+  <h3 className="font-semibold mb-2">Preferred Locations (Top 5 States)</h3>
+  <div className="space-y-3">
+    {form.preferredLocations.map((loc, index) => (
+      <select
+        key={index}
+        value={loc}
+        onChange={(e) => handleLocationChange(index, e.target.value)}
+        className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+      >
+        <option value="">Select State {index + 1}</option>
+        {indianStates.map((state) => (
+          <option key={state} value={state}>{state}</option>
+        ))}
+      </select>
+    ))}
+  </div>
+</div>
 
       {/* NEET & JEE Scores (All Streams) */}
 <div className="space-y-4">

@@ -293,7 +293,15 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
     otherAmbition: "",
     preferredLocations: ["", "", "", "", ""], // NEW
   };
-
+  const indianStates = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+  "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+  "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Jammu & Kashmir",
+  "Ladakh","Puducherry", "Chandigarh"
+];
   const [form, setForm] = useState(emptyForm);
 
   const [compulsorySubjects, setCompulsorySubjects] = useState([]);
@@ -358,6 +366,9 @@ export default function ProfileSetup10th({ onComplete, initialData, email }) {
       "Economics, Disaster Management and Road Safety Education",
       "Science",
     ]);
+
+    
+
 
     const derivedOptionalSubjects = Object.keys(initialData.marks || {}).filter(
       subj => !compulsorySet.has(subj)
@@ -568,20 +579,20 @@ if (filledLocations.length < 3) {
         </div>
         {/* Preferred Locations */}
 <div>
-  <h3 className="font-semibold mb-2">
-    Preferred Locations (Any 3 Required)
-  </h3>
-
-  <div className="space-y-2">
+  <h3 className="font-semibold mb-2">Preferred Locations (Top 5 States)</h3>
+  <div className="space-y-3">
     {form.preferredLocations.map((loc, index) => (
-      <input
+      <select
         key={index}
-        type="text"
         value={loc}
         onChange={(e) => handleLocationChange(index, e.target.value)}
-        className="w-full border p-2 rounded"
-        placeholder={`Preferred Location ${index + 1}${index < 3 ? " *" : ""}`}
-      />
+        className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+      >
+        <option value="">Select State {index + 1}</option>
+        {indianStates.map((state) => (
+          <option key={state} value={state}>{state}</option>
+        ))}
+      </select>
     ))}
   </div>
 </div>
