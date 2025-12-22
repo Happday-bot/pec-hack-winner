@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabase";
 import { Search, Sparkles } from "lucide-react";
@@ -30,7 +28,7 @@ export default function SuggestedCourses() {
     fetchCareers();
   }, []);
 
-  /* ================= 2. MAIN LOGIC (UNION REPLICA) ================= */
+  /* ================= 2. MAIN LOGIC ================= */
   useEffect(() => {
     const fetchCourses = async () => {
       setLoading(true);
@@ -51,91 +49,88 @@ export default function SuggestedCourses() {
           const userTags = iData?.interest?.recommended_fields || [];
 
           if (userTags.length > 0) {
-            const { data: masterData } = await supabase.from("interest_master").select("domain").in("raw_interest", userTags);
-            const domainNames = [...new Set((masterData || []).map(row => row.domain))];
+            const { data: masterData } = await supabase.from("interest_master").select("interest_key").in("raw_interest", userTags);
+            const interestKeys = [...new Set((masterData || []).map((row) => row.interest_key))];
 
-            if (domainNames.length > 0) {
-              const { data: domainRows } = await supabase.from("domains").select("id").in("name", domainNames);
-              const domainIds = (domainRows || []).map(d => d.id);
+            if (interestKeys.length > 0) {
+              // A. Fetch Courses matching interest
+              const coursesPromise = supabase
+                .from("courses")
+                .select("*, domains(name)")
+                .in("interest_key", interestKeys)
+                .eq("qualification", qualification);
 
-              if (domainIds.length > 0) {
-                const { data: res } = await supabase
-                  .from("courses")
-                  .select("*, domains(name)")
-                  .in("domain_id", domainIds)
-                  .eq("qualification", qualification);
-                finalCourses = res || [];
+              // B. If 10th grade, also fetch STREAMS matching interest
+              let streamsRes = { data: [] };
+              if (qualification === "10th") {
+                streamsRes = await supabase
+                  .from("streams")
+                  .select("id, name, domain_id, domains(name), interest_key")
+                  .in("interest_key", interestKeys);
               }
+
+              const coursesRes = await coursesPromise;
+
+              const formattedStreams = (streamsRes.data || []).map((stream) => ({
+                id: `stream-${stream.id}`,
+                course_title: stream.name,
+                qualification: "11th/12th Stream",
+                domain_id: stream.domain_id,
+                domains: stream.domains,
+                type: "stream",
+              }));
+
+              const formattedCourses = (coursesRes.data || []).map((course) => ({
+                ...course,
+                type: "course",
+              }));
+
+              finalCourses = [...formattedStreams, ...formattedCourses];
             }
           }
         } 
-        // --- TAB 2: ELIGIBLE (UNION LOGIC) ---
+        // --- TAB 2: ELIGIBLE ---
         else {
           if (qualification === "10th") {
-            // =========================================================
-            //  UPDATED LOGIC: SQL UNION EQUIVALENT
-            // =========================================================
-            
-            // 1. Fetch ALL Streams (Available to 10th graders)
-            // Expecting 'streams' table to have: id, name, domain_id
-            const streamsPromise = supabase
-              .from("streams")
-              .select("id, name, domain_id, domains(name)");
+            const streamsPromise = supabase.from("streams").select("id, name, domain_id, domains(name)");
+            const coursesPromise = supabase.from("courses").select("*, domains(name)").eq("qualification", "10th");
 
-            // 2. Fetch Courses specifically for 10th grade
-            const coursesPromise = supabase
-              .from("courses")
-              .select("*, domains(name)")
-              .eq("qualification", "10th");
-
-            // Execute both in parallel (mimicking UNION)
             const [streamsRes, coursesRes] = await Promise.all([streamsPromise, coursesPromise]);
 
-            // Format Streams to look like Courses for the UI
-            const formattedStreams = (streamsRes.data || []).map(stream => ({
-              id: `stream-${stream.id}`,       // Unique ID for React key
-              course_title: stream.name,       // e.g., "PCM", "Commerce"
-              qualification: "11th/12th Stream", // Label for UI
+            const formattedStreams = (streamsRes.data || []).map((stream) => ({
+              id: `stream-${stream.id}`,
+              course_title: stream.name,
+              qualification: "11th/12th Stream",
               domain_id: stream.domain_id,
-              domains: stream.domains,         // { name: "Engineering" }
-              type: "stream"                   // Tag to style differently if needed
+              domains: stream.domains,
+              type: "stream",
             }));
 
-            // Format Courses (keep as is)
-            const formattedCourses = (coursesRes.data || []).map(course => ({
+            const formattedCourses = (coursesRes.data || []).map((course) => ({
               ...course,
-              type: "course"
+              qualification: course.level === "diploma" ? "After 10th (Diploma)" : course.qualification,
+              type: "course",
             }));
 
-            // Combine both lists
             finalCourses = [...formattedStreams, ...formattedCourses];
-
           } else {
-            // 12th: Filter by Stream (Existing Logic)
+            // 12th Logic (Unchanged)
             const { data: profile } = await supabase.from("12th_profile_data").select("stream").eq("email", email).maybeSingle();
             const stream = profile?.stream;
-            // Temporary map until streams table is fully utilized for 12th logic too
-            const STREAM_MAP = {
-              "PCM": [1, 2, 7], "PCB": [3, 2, 7], "PCMB": [1, 2, 3, 7], "Commerce": [4, 5, 6], "Arts": [6, 7, 5]
-            };
+            const STREAM_MAP = { PCM: [1, 2, 7], PCB: [3, 2, 7], PCMB: [1, 2, 3, 7], Commerce: [4, 5, 6], Arts: [6, 7, 5] };
+
             if (stream && STREAM_MAP[stream]) {
               const { data: res } = await supabase.from("courses").select("*, domains(name)").in("domain_id", STREAM_MAP[stream]).eq("qualification", "12th");
-              finalCourses = res || [];
+              finalCourses = (res || []).map((c) => ({ ...c, type: "course" }));
             }
           }
         }
 
-        // --- CAREER FILTERS ---
+        // --- Career Filter ---
         if (selectedCareer !== "all") {
-          // Note: This filter applies strictly to "Courses". Streams might be filtered out if not mapped.
-          // Since Streams are new, we check if the item is a 'stream' or if it maps to the career.
-          // For now, we filter normally. Streams without career mapping in DB will vanish when filtering.
           const { data: mapping } = await supabase.from("course_career_mapping").select("course_id").eq("career_id", selectedCareer);
-          const allowedIds = (mapping || []).map(m => m.course_id);
-          
-          // Only filter actual courses. Keep streams visible or filter them if you add a stream_career_mapping later.
-          // Currently filtering everything:
-          finalCourses = finalCourses.filter(c => c.type === 'stream' || allowedIds.includes(c.id));
+          const allowedIds = (mapping || []).map((m) => m.course_id);
+          finalCourses = finalCourses.filter((c) => c.type === "stream" || allowedIds.includes(c.id));
         }
 
         setCourses(finalCourses);
@@ -150,8 +145,8 @@ export default function SuggestedCourses() {
     fetchCourses();
   }, [email, qualification, activeTab, selectedCareer]);
 
-  // --- GROUPING LOGIC ---
-  const filteredCourses = courses.filter(c => 
+  // --- FILTERING & GROUPING ---
+  const filteredCourses = courses.filter((c) =>
     c.course_title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -170,8 +165,6 @@ export default function SuggestedCourses() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      
-      {/* HERO */}
       <section ref={heroRef} className="bg-indigo-600 text-white py-16 px-6 rounded-b-[3rem] shadow-xl text-center">
         <h1 className="text-4xl font-extrabold mb-2">Suggested Courses</h1>
         <p className="opacity-90">
@@ -179,10 +172,7 @@ export default function SuggestedCourses() {
         </p>
       </section>
 
-      {/* CONTENT */}
       <div className="max-w-7xl mx-auto px-6 py-12">
-        
-        {/* CONTROLS */}
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-10">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-4 top-3 text-gray-400 w-5 h-5" />
@@ -190,12 +180,12 @@ export default function SuggestedCourses() {
               type="text"
               placeholder="Search courses..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 rounded-xl border shadow-sm outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
-          <div className="flex bg-white p-1 rounded-xl shadow-sm border flex">
+          <div className="flex bg-white p-1 rounded-xl shadow-sm border">
             <button
               onClick={() => setActiveTab("interest")}
               className={`px-6 py-2 rounded-lg font-bold transition ${
@@ -216,64 +206,36 @@ export default function SuggestedCourses() {
 
           <select
             value={selectedCareer}
-            onChange={e => setSelectedCareer(e.target.value)}
+            onChange={(e) => setSelectedCareer(e.target.value)}
             className="p-3 rounded-xl border bg-white shadow-sm outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="all">All Career Goals</option>
-            {careers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {careers.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>
         </div>
 
-        {/* RESULTS - GROUPED BY DOMAIN */}
         {Object.keys(groupedDomains).length > 0 ? (
           Object.entries(groupedDomains).map(([domainId, { name: domainName, items }]) => (
             <div key={domainId} className="mb-12">
-              
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 pl-2 border-l-4 border-indigo-500">
-                {domainName}
-              </h2>
-
+              <h2 className="text-2xl font-bold text-gray-800 mb-6 pl-2 border-l-4 border-indigo-500">{domainName}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                
-                {items.map(course => (
-                  <div 
-                    key={course.id} 
-                    className={`p-6 rounded-2xl shadow-sm border hover:shadow-lg transition flex flex-col h-full ${
-                      course.type === 'stream' ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-gray-100'
-                    }`}
-                  >
+                {items.map((course) => (
+                  <div key={course.id} className={`p-6 rounded-2xl shadow-sm border hover:shadow-lg transition flex flex-col h-full ${course.type === "stream" ? "bg-indigo-50 border-indigo-200" : "bg-white border-gray-100"}`}>
                     <div className="flex justify-between items-start mb-4">
-                      <span className={`text-xs font-black px-2 py-1 rounded uppercase tracking-wider ${
-                         course.type === 'stream' ? 'bg-indigo-200 text-indigo-800' : 'bg-indigo-50 text-indigo-700'
-                      }`}>
-                        {domainName}
-                      </span>
+                      <span className={`text-xs font-black px-2 py-1 rounded uppercase tracking-wider ${course.type === "stream" ? "bg-indigo-200 text-indigo-800" : "bg-indigo-50 text-indigo-700"}`}>{domainName}</span>
                       {course.demand && (
                         <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">
-                          <Sparkles className="w-3 h-3 fill-emerald-700" />
-                          IN DEMAND
+                          <Sparkles className="w-3 h-3 fill-emerald-700" /> IN DEMAND
                         </span>
                       )}
                     </div>
-                    
-                    <h3 className="text-xl font-bold text-gray-800 leading-tight mb-2">
-                      {course.course_title}
-                    </h3>
-
-                    {/* Description for Streams vs Courses */}
-                    {course.type === 'stream' && (
-                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                            Select this stream in 11th & 12th to pursue careers in {domainName}.
-                        </p>
+                    <h3 className="text-xl font-bold text-gray-800 leading-tight mb-2">{course.course_title}</h3>
+                    {course.type === "stream" && (
+                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">Select this stream in 11th & 12th to pursue careers in {domainName}.</p>
                     )}
-                    
                     <div className="mt-auto pt-4 border-t border-gray-50 flex justify-between items-center">
-                      <span className="text-xs text-indigo-400 font-bold uppercase tracking-wider">
-                        {course.qualification}
-                      </span>
-                      <button className="text-sm font-bold text-indigo-600 hover:underline">
-                        View Details
-                      </button>
+                      <span className="text-xs text-indigo-400 font-bold uppercase tracking-wider">After 10th</span>
+                      <button className="text-sm font-bold text-indigo-600 hover:underline">View Details</button>
                     </div>
                   </div>
                 ))}
@@ -283,9 +245,7 @@ export default function SuggestedCourses() {
         ) : (
           <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed">
             <p className="text-gray-400 font-medium text-lg">No courses found matching your criteria.</p>
-            <button onClick={() => setActiveTab("eligible")} className="mt-4 text-indigo-600 font-bold hover:underline">
-              Check Eligible Courses
-            </button>
+            <button onClick={() => setActiveTab("eligible")} className="mt-4 text-indigo-600 font-bold hover:underline">Check Eligible Courses</button>
           </div>
         )}
       </div>
