@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-const user_id = localStorage.getItem("user_id");
 
 // --- Helper Functions ---
 const shuffle = (arr) => {
@@ -196,47 +195,17 @@ const AptitudeTest10 = () => {
     };
   };
 
-const handleGoToDashboard = async () => {
+const handleGoToDashboard = () => {
   if (!finalResults) return;
 
-  console.log("Final Results:", finalResults);
-  console.log("User ID:", user_id);
-
   if (finalResults.reliability > 45) {
-    try {
-      const response = await fetch(
-        `http://localhost:8000/submit-results/10/${user_id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(finalResults),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        console.error("Backend error:", error);
-        alert("Failed to save interests");
-        return;
-      }
-
-      const data = await response.json();
-      console.log("Interest saved successfully:", data);
-
-      navigate("/courses");
-    } catch (err) {
-      console.error("Network / server error:", err);
-      alert("Server error. Please try again.");
-    }
+    // No backend: just navigate to courses
+    navigate("/courses");
   } else {
-    alert("Your answers were not reliable enough. Please retake the test.");
+    alert("Your answers were not reliable enough. Please retake the quiz.");
     navigate("/aptitude-test");
   }
 };
-
-
 
 
   const TOTAL_QUESTIONS = questions.length;
