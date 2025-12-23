@@ -8,7 +8,7 @@ const AptitudeTest = () => {
 
   // 🔐 Gemini API (COMMENT THIS BEFORE FINAL COMMIT)
   const ai = new GoogleGenAI({
-    //apiKey: "",
+    apiKey: "AIzaSyD4ZQJ3sEpCf_zIQLYlpajZ0QX36mUWtHc",
   });
 
   const [questions, setQuestions] = useState([]);
@@ -83,13 +83,50 @@ const AptitudeTest = () => {
     }
 
     const payload = {
-      prompt_id: "CAREER_GUIDANCE_V4",
+      prompt_id: "CAREER_GUIDANCE_V4_DOMAIN_FILTERED",
+      prompt: `You are a professional career guidance analyzer. Strictly adhere to the following steps and output format using ONLY the provided 'student_data' and the analysis key (A: Creative, B: Technical/Mechanical/Structured, C: Commerce/Finance/Management, D: Biological/Medical/Research):
+
+1. Tally the student's 'answers' (Q1-Q20) into the four clusters (A, B, C, D). Note Q14 and Q19 should be ignored if 'N/A' is used.
+
+2. Determine the dominant cluster (highest count).
+
+3. CRITICAL STEP: Filter Outcome Recommendations.
+
+Select FIVE if standard 12th or THREE if standard 10th specializations for the 'final_outcome_recommendation'
+from the 12th-grade list (['mech','civil','comp','aids','aiml','it','robotics','biomedical','biotechnology','cardiologist','mbbs','bba','bcom','chartered_accountant','law','fashion_design','animation'])
+or from the 10th grade-list (['comp','Bio','Arts','Commerce','cultural sciences']).
+
+Respect stream constraints strictly.
+
+4. OUTPUT FORMAT (MANDATORY)
+
+Return ONLY valid JSON. No markdown. No explanations.
+
+{
+  "tallied_answers": { "A": number, "B": number, "C": number, "D": number },
+  "dominant_cluster_analysis": {
+    "type": "A | B | C | D",
+    "count": number,
+    "description": "string"
+  },
+  "final_outcome_recommendation": [
+    {
+      "type": "A | B | C | D | A/C | C/A | B/D",
+      "field": "string",
+      "description": "string"
+    }
+  ],
+  "justification": "string"
+}
+
+If invalid, return {}.`,
       student_data: {
-        student_grade: qualification,
-        current_stream: stream,
+        student_grade: sessionStorage.getItem("qualification"),
+        current_stream: sessionStorage.getItem("stream") || "N/A",
         answers,
       },
     };
+
 
     try {
       const response = await ai.models.generateContent({
@@ -142,7 +179,6 @@ const AptitudeTest = () => {
       }
 
       sessionStorage.setItem("aptitudeDone", "true");
-      navigate("/courses");
 
     } catch (err) {
       console.error("❌ Aptitude error:", err);
@@ -240,9 +276,8 @@ const AptitudeTest = () => {
                 <button
                   onClick={handleFinalSubmit}
                   disabled={isSubmitting}
-                  className={`px-4 py-2 rounded text-white ${
-                    isSubmitting ? "bg-gray-400" : "bg-blue-600"
-                  }`}
+                  className={`px-4 py-2 rounded text-white ${isSubmitting ? "bg-gray-400" : "bg-blue-600"
+                    }`}
                 >
                   {isSubmitting ? "Analyzing..." : "Confirm"}
                 </button>

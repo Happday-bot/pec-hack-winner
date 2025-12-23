@@ -1,8 +1,50 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Search, Sparkles, MapPin, Building2, GraduationCap, Phone, Mail, Globe, Users, BookOpen, Wifi, Utensils, Truck, Dumbbell, CircleAlert } from "lucide-react";
+import {
+  Search,
+  Sparkles,
+  MapPin,
+  Building2,
+  GraduationCap,
+  Phone,
+  Mail,
+  Globe,
+  Users,
+  BookOpen,
+  Wifi,
+  Utensils,
+  Truck,
+  Dumbbell,
+  CircleAlert
+} from "lucide-react";
 import gsap from "gsap";
 import { supabase } from "./supabase";
 import { useNavigate } from "react-router-dom";
+
+const toRad = (value) => (value * Math.PI) / 180;
+
+const getDistanceKm = (lat1, lon1, lat2, lon2) => {
+  if (
+    lat1 == null ||
+    lon1 == null ||
+    lat2 == null ||
+    lon2 == null
+  ) return Infinity;
+
+  const R = 6371; // Earth radius (km)
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+    Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 
 export default function Colleges() {
   /* ===============================
@@ -12,18 +54,18 @@ export default function Colleges() {
   const [loading, setLoading] = useState(true);
   const [canAccess, setCanAccess] = useState(false);
   const [checking, setChecking] = useState(true);
-  
+
   // Filters
   const [search, setSearch] = useState("");
   const [selectedDomain, setSelectedDomain] = useState("");
   const [selectedMedium, setSelectedMedium] = useState("");
-  
+
   // User Data
   const [userPreferences, setUserPreferences] = useState([]);
   const [userStream, setUserStream] = useState(null);
 
   const [selectedCollege, setSelectedCollege] = useState(null);
-  
+
   const heroRef = useRef(null);
   const navigate = useNavigate();
 
@@ -33,65 +75,114 @@ export default function Colleges() {
   useEffect(() => {
     const init = async () => {
       try {
-        // A. Identify User
         const rawQual = sessionStorage.getItem("qualification");
-        const email = sessionStorage.getItem("userEmail") || sessionStorage.getItem("signUpEmail");
-        
-        const qualification = rawQual === "10" || rawQual === "10th" ? "10"
-                          : rawQual === "12" || rawQual === "12th" ? "12" : null;
+        const email =
+          sessionStorage.getItem("userEmail") ||
+          sessionStorage.getItem("signUpEmail");
+
+        const qualification =
+          rawQual === "10" || rawQual === "10th"
+            ? "10"
+            : rawQual === "12" || rawQual === "12th"
+              ? "12"
+              : null;
 
         if (!qualification || !email) {
-         setCanAccess(false);
-         setChecking(false);
-         return;
+          setCanAccess(false);
+          setChecking(false);
+          return;
         }
 
-        // B. Fetch User Profile
-        const table = qualification === "10" ? "10th_profile_data" : "12th_profile_data";
-        
+        const table =
+          qualification === "10"
+            ? "10th_profile_data"
+            : "12th_profile_data";
+
         let queryColumns = "preferred_locations";
-        if (qualification === "12") {
-            queryColumns += ", stream";
-        }
-        
+        if (qualification === "12") queryColumns += ", stream";
+
         const { data: profile, error: profileError } = await supabase
           .from(table)
           .select(queryColumns)
           .eq("email", email)
           .maybeSingle();
 
+
+
         if (profileError || !profile) {
-         console.error("Profile Error:", profileError);
-         setCanAccess(false);
+          console.error("Profile Error:", profileError);
+          setCanAccess(false);
         } else {
-         setCanAccess(true);
-         
-         // --- PREFERENCES LOGIC ---
-         let prefs = [];
-         if (profile.preferred_locations && Array.isArray(profile.preferred_locations)) {
-            prefs = profile.preferred_locations;
-         } else if (profile.preferred_locations && typeof profile.preferred_locations === 'object') {
-            prefs = Object.values(profile.preferred_locations);
-         }
-         setUserPreferences(prefs);
+          setCanAccess(true);
 
-         // --- STREAM LOGIC (Student's Background) ---
-         if (qualification === "12" && profile.stream) {
-           setUserStream(profile.stream);
-         }
 
-         // --- FETCH COLLEGES ---
-         let query = supabase.from("colleges").select("*");
+          if (qualification === "12" && profile.stream) {
+            setUserStream(profile.stream);
+          }
 
-         // Filter by State Preference (Database Level)
-         if (prefs.length > 0) {
-           query = query.in("state", prefs);
-         }
+          const { data: geoProfile, error: geoError } = await supabase
+            .from("profiles")
+            .select("latitude, longitude")
+            .eq("email", email)
+            .maybeSingle();
 
-         const { data: collegeData, error: collegeError } = await query;
-         
-         if (collegeError) console.error("Error fetching colleges:", collegeError);
-         else setColleges(collegeData || []);
+          let userLat = null;
+          let userLon = null;
+
+          if (geoError) {
+            console.error("Geo fetch error:", geoError);
+          } else if (geoProfile) {
+            userLat = Number(geoProfile.latitude);
+            userLon = Number(geoProfile.longitude);
+            console.log("User Latitude:", userLat);
+            console.log("User Longitude:", userLon);
+          } else {
+            console.warn("No geolocation found for user");
+          }
+
+          const { data: collegeData, error: collegeError } = await supabase
+            .from("colleges")
+            .select("*");
+
+          if (collegeError) {
+            console.error("Error fetching colleges:", collegeError);
+            return;
+          }
+
+          // Normalize preferred locations
+          const preferredLocations = Array.isArray(profile.preferred_locations)
+            ? [...new Set(profile.preferred_locations.map(loc => loc.toLowerCase()))]
+            : [];
+
+          // 1️⃣ Filter by preferred locations
+          const filteredColleges = (collegeData || []).filter(college =>
+            preferredLocations.includes((college.state || "").toLowerCase())
+          );
+
+          // 2️⃣ Attach distance to each college
+          const collegesWithDistance = filteredColleges.map(college => {
+            const distanceKm = getDistanceKm(
+              userLat,
+              userLon,
+              Number(college.latitude),
+              Number(college.longitude)
+            );
+
+            return {
+              ...college,
+              distanceKm
+            };
+          });
+
+          // 3️⃣ Sort by nearest first
+          const sortedColleges = collegesWithDistance.sort(
+            (a, b) => a.distanceKm - b.distanceKm
+          );
+
+          console.log("Sorted Colleges (by distance):", sortedColleges);
+
+          setColleges(sortedColleges);
+
         }
       } catch (err) {
         console.error("Init error:", err);
@@ -105,7 +196,7 @@ export default function Colleges() {
   }, []);
 
   /* ===============================
-    3. ELIGIBILITY MAPPING (Stream -> Domains)
+    3. ELIGIBILITY MAPPING
     ============================== */
   const getEligibleDomains = (studentStream) => {
     if (!studentStream) return [];
@@ -113,12 +204,11 @@ export default function Colleges() {
     const s = studentStream.toUpperCase();
 
     const map = {
-      // PCM Student -> Eligible for these Domains
-      "PCM": ["Engineering", "Science", "Design", "Management", "Law", "Arts", "Commerce"],
-      "PCB": ["Medical", "Science", "Design", "Management", "Law", "Arts"],
-      "PCMB": ["Engineering", "Medical", "Science", "Design", "Management", "Law", "Arts", "Commerce"],
-      "COMMERCE": ["Commerce", "Management", "Law", "Arts", "Design"],
-      "ARTS": ["Arts", "Law", "Design", "Management"]
+      PCM: ["Engineering", "Science", "Design", "Management", "Law", "Arts", "Commerce"],
+      PCB: ["Medical", "Science", "Design", "Management", "Law", "Arts"],
+      PCMB: ["Engineering", "Medical", "Science", "Design", "Management", "Law", "Arts", "Commerce"],
+      COMMERCE: ["Commerce", "Management", "Law", "Arts", "Design"],
+      ARTS: ["Arts", "Law", "Design", "Management"]
     };
 
     return map[s] || [];
@@ -138,64 +228,70 @@ export default function Colleges() {
   }, [loading]);
 
   /* ===============================
-    5. FILTERING & SORTING
+    5. FILTERING (NO LOCATION LOGIC)
     ============================== */
-  let filteredColleges = colleges.filter((college) => {
-    // A. Search
-    const matchesSearch = college.name.toLowerCase().includes(search.toLowerCase()) ||
-                  college.district?.toLowerCase().includes(search.toLowerCase());
-   
-    // B. Dropdown Filters (Domain & Medium)
-    // Note: 'college.stream' in DB stores Domain arrays like ["Medical College"]
-    const collegeStream = Array.isArray(college.stream) ? college.stream[0] : college.stream;
-    const matchesDomain = selectedDomain ? collegeStream === selectedDomain : true;
-    const matchesMedium = selectedMedium ? college.medium === selectedMedium : true;
+  const filteredColleges = colleges.filter((college) => {
+    const matchesSearch =
+      college.name.toLowerCase().includes(search.toLowerCase()) ||
+      college.district?.toLowerCase().includes(search.toLowerCase());
 
-    // C. 12th Grade ELIGIBILITY FILTER
+    const collegeStream = Array.isArray(college.stream)
+      ? college.stream[0]
+      : college.stream;
+
+    const matchesDomain = selectedDomain
+      ? collegeStream === selectedDomain
+      : true;
+
+    const matchesMedium = selectedMedium
+      ? college.medium === selectedMedium
+      : true;
+
     let isEligible = true;
     if (userStream) {
-       const eligibleDomains = getEligibleDomains(userStream);
-       if (eligibleDomains.length > 0 && !eligibleDomains.includes(collegeStream)) {
-         isEligible = false;
-       }
+      const eligibleDomains = getEligibleDomains(userStream);
+      if (
+        eligibleDomains.length > 0 &&
+        !eligibleDomains.includes(collegeStream)
+      ) {
+        isEligible = false;
+      }
     }
 
     return matchesSearch && matchesDomain && matchesMedium && isEligible;
   });
 
-  // SORTING
-  if (userPreferences.length > 0) {
-    filteredColleges.sort((a, b) => {
-      const indexA = userPreferences.indexOf(a.state);
-      const indexB = userPreferences.indexOf(b.state);
-      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-      if (indexA !== -1) return -1;
-      if (indexB !== -1) return 1;
-      return 0;
-    });
-  }
+  const availableDomains = [
+    ...new Set(
+      colleges
+        .map((c) => (Array.isArray(c.stream) ? c.stream[0] : c.stream))
+        .filter(Boolean)
+    )
+  ];
 
-  // Dynamic Dropdowns - Handle JSONB stream arrays
-  const availableDomains = [...new Set(
-    colleges
-      .map(c => Array.isArray(c.stream) ? c.stream[0] : c.stream)
-      .filter(Boolean)
-  )];
-  
   const validDropdownDomains = userStream
-      ? availableDomains.filter(d => getEligibleDomains(userStream).includes(d))
-      : availableDomains;
+    ? availableDomains.filter((d) =>
+      getEligibleDomains(userStream).includes(d)
+    )
+    : availableDomains;
 
-  const uniqueMediums = [...new Set(colleges.map(c => c.medium).filter(Boolean))];
+  const uniqueMediums = [
+    ...new Set(colleges.map((c) => c.medium).filter(Boolean))
+  ];
 
   /* ===============================
     6. RENDER
     ============================== */
-  if (checking) return <div className="min-h-screen flex items-center justify-center text-indigo-600 font-bold">Checking access...</div>;
+  if (checking)
+    return (
+      <div className="min-h-screen flex items-center justify-center text-indigo-600 font-bold">
+        Checking access...
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-slate-50">
-      
+
       {!canAccess && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-8 text-center max-w-md shadow-2xl">
@@ -217,7 +313,7 @@ export default function Colleges() {
 
       {/* SIMPLIFIED HERO */}
       <section ref={heroRef} className="bg-indigo-600 text-white py-20 px-6 rounded-b-[3rem] shadow-xl text-center relative overflow-hidden">
-         {/* Floating shapes */}
+        {/* Floating shapes */}
         <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
         <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
         <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
@@ -243,7 +339,7 @@ export default function Colleges() {
               className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
-          
+
           <select
             className="w-full md:w-48 p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
             value={selectedDomain}
@@ -267,53 +363,53 @@ export default function Colleges() {
       {/* GRID */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         {loading ? (
-         <div className="text-center py-20 text-indigo-600 font-bold">Loading colleges...</div>
+          <div className="text-center py-20 text-indigo-600 font-bold">Loading colleges...</div>
         ) : filteredColleges.length === 0 ? (
-         <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed">
-           <p className="text-gray-400 font-medium text-lg">
-             {userStream
-               ? `No eligible colleges found for ${userStream} in your preferred locations.`
-               : "No colleges found matching your criteria."}
-           </p>
-         </div>
+          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed">
+            <p className="text-gray-400 font-medium text-lg">
+              {userStream
+                ? `No eligible colleges found for ${userStream} in your preferred locations.`
+                : "No colleges found matching your criteria."}
+            </p>
+          </div>
         ) : (
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-           {filteredColleges.map((college) => {
-             const collegeStream = Array.isArray(college.stream) ? college.stream[0] : college.stream;
-             return (
-               <div key={college.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col">
-                 <div className="p-6 flex-grow">
-                   <div className="flex justify-between items-start mb-3">
-                     <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                       {collegeStream}
-                     </span>
-                     <span className="flex items-center gap-1 text-xs font-semibold text-gray-500">
-                       <MapPin className="w-3 h-3" /> {college.district}, {college.state}
-                     </span>
-                   </div>
-                   <h3 className="text-xl font-bold text-gray-800 mb-2 leading-tight">{college.name}</h3>
-                   <p className="text-sm text-gray-500 mb-4 line-clamp-2">{college.address}</p>
-                   
-                   <div className="space-y-2 mb-4">
-                     <div className="flex items-center gap-2 text-sm text-gray-700">
-                       <GraduationCap className="w-4 h-4 text-indigo-500" />
-                       <span className="font-medium">Degrees:</span> 
-                       {college.degrees?.slice(0, 3).join(", ")}
-                     </div>
-                   </div>
-                 </div>
-                 <div className="px-6 pb-6 pt-0 mt-auto">
-                   <button
-                     onClick={() => setSelectedCollege(college)}
-                     className="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition active:scale-95"
-                   >
-                     View Details
-                   </button>
-                 </div>
-               </div>
-             );
-           })}
-         </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredColleges.map((college) => {
+              const collegeStream = Array.isArray(college.stream) ? college.stream[0] : college.stream;
+              return (
+                <div key={college.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col">
+                  <div className="p-6 flex-grow">
+                    <div className="flex justify-between items-start mb-3">
+                      <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                        {collegeStream}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs font-semibold text-gray-500">
+                        <MapPin className="w-3 h-3" /> {college.district}, {college.state}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-2 leading-tight">{college.name}</h3>
+                    <p className="text-sm text-gray-500 mb-4 line-clamp-2">{college.address}</p>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <GraduationCap className="w-4 h-4 text-indigo-500" />
+                        <span className="font-medium">Degrees:</span>
+                        {college.degrees?.slice(0, 3).join(", ")}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="px-6 pb-6 pt-0 mt-auto">
+                    <button
+                      onClick={() => setSelectedCollege(college)}
+                      className="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition active:scale-95"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
@@ -326,7 +422,7 @@ export default function Colleges() {
               <h2 className="text-2xl font-bold text-gray-800 pr-8">{selectedCollege.name}</h2>
               <button onClick={() => setSelectedCollege(null)} className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full text-gray-600 transition">✕</button>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {/* BASIC INFO GRID */}
               <div className="bg-indigo-50 p-6 rounded-2xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -335,7 +431,7 @@ export default function Colleges() {
                 <div className="text-center"><span className="block text-gray-500 font-bold uppercase text-xs mb-1">Rating</span><span className="font-semibold text-gray-800">{selectedCollege.rating ? `${selectedCollege.rating}/5` : "N/A"}</span></div>
                 <div className="text-center"><span className="block text-gray-500 font-bold uppercase text-xs mb-1">Medium</span><span className="font-semibold text-gray-800">{selectedCollege.medium}</span></div>
               </div>
-              
+
               {/* LOCATION & CONTACT */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
@@ -353,7 +449,7 @@ export default function Colleges() {
                     )}
                   </div>
                 </div>
-                
+
                 <div>
                   <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <Phone className="w-5 h-5 text-indigo-500" />
@@ -399,7 +495,7 @@ export default function Colleges() {
                     </p>
                   )}
                 </div>
-                
+
                 <div>
                   <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <CircleAlert className="w-5 h-5 text-indigo-500" />
@@ -484,7 +580,7 @@ export default function Colleges() {
                       <p className="text-sm text-gray-700 bg-green-50 p-4 rounded-xl">{selectedCollege.placements}</p>
                     </div>
                   )}
-                  
+
                   {selectedCollege.cutoff && Object.keys(selectedCollege.cutoff).length > 0 && (
                     <div>
                       <h3 className="text-lg font-bold text-gray-800 mb-3">Cutoffs</h3>
@@ -493,12 +589,12 @@ export default function Colleges() {
                           <div key={exam} className="p-3 bg-white rounded-lg border-l-4 border-indigo-500">
                             <span className="font-bold uppercase text-indigo-600 text-xs">{exam.replace('_', ' ')}:</span>
                             <div className="ml-2 mt-1">
-                              {typeof details === 'object' 
+                              {typeof details === 'object'
                                 ? Object.entries(details).map(([cat, val]) => (
-                                    <span key={cat} className="inline-block bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs mr-2 mb-1">
-                                      {cat}: {val}
-                                    </span>
-                                  ))
+                                  <span key={cat} className="inline-block bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs mr-2 mb-1">
+                                    {cat}: {val}
+                                  </span>
+                                ))
                                 : <span className="font-semibold">{details}</span>
                               }
                             </div>
@@ -507,14 +603,14 @@ export default function Colleges() {
                       </div>
                     </div>
                   )}
-                  
+
                   {selectedCollege.career && (
                     <div className="lg:col-span-2">
                       <h3 className="text-lg font-bold text-gray-800 mb-3">Career Opportunities</h3>
                       <p className="text-sm text-gray-700 bg-blue-50 p-4 rounded-xl">{selectedCollege.career}</p>
                     </div>
                   )}
-                  
+
                   {selectedCollege.alumini && (
                     <div className="lg:col-span-2">
                       <h3 className="text-lg font-bold text-gray-800 mb-3">Alumni Network</h3>

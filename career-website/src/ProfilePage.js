@@ -129,25 +129,36 @@ export default function ProfileSettings() {
      BOOTSTRAP (EMAIL IS KEY)
      =============================== */
   useEffect(() => {
-    if (!EMAIL) return;
+  if (!EMAIL) return;
 
+  const bootstrap = async () => {
     resetStateForUser();
-    isBootstrappingRef.current = true;
+    setLoading(true);
 
-    fetchBasicProfile();
-    fetch10thProfile();
-    fetch12thProfile();
-  }, [EMAIL, fetchBasicProfile, fetch10thProfile, fetch12thProfile]);
-
-  /* ===============================
-     SYNC EXIT
-     =============================== */
-  useEffect(() => {
-    if (syncCount >= TOTAL_SYNC_CALLS && loading) {
-      isBootstrappingRef.current = false;
+    try {
+      await Promise.all([
+        fetchBasicProfile(),
+        fetch10thProfile(),
+        fetch12thProfile()
+      ]);
+    } finally {
       setLoading(false);
     }
-  }, [syncCount, loading]);
+  };
+
+  bootstrap();
+}, [EMAIL, fetchBasicProfile, fetch10thProfile, fetch12thProfile]);
+
+
+  // /* ===============================
+  //    SYNC EXIT
+  //    =============================== */
+  // useEffect(() => {
+  //   if (syncCount >= TOTAL_SYNC_CALLS && loading) {
+  //     isBootstrappingRef.current = false;
+  //     setLoading(false);
+  //   }
+  // }, [syncCount, loading]);
 
   /* ===============================
      LOADING
