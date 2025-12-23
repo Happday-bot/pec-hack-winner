@@ -99,7 +99,7 @@ function SignUp({ onSignup }) {
         }
 
         onSignup?.();
-        navigate("/profile-setup-basic");
+        navigate("/signin");
         setLoading(false);
     };
 
