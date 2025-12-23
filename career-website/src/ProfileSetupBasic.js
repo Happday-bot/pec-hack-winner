@@ -193,6 +193,7 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
   const navigate = useNavigate();
 
   const emptyForm = {
+    fullname: "",
     firstName: "",
     middleName: "",
     lastName: "",
@@ -219,7 +220,7 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
 
   const handleNext = async (e) => {
     e.preventDefault();
-    const email = Email || sessionStorage.getItem("signUpEmail");
+    const email = Email || sessionStorage.getItem("signUpEmail") || sessionStorage.getItem("userEmail");
     if (!email) return alert("Session expired. Please sign up again.");
 
     // --- Geolocation fetch on form submission using district + pincode + country ---
@@ -253,6 +254,7 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
     // --- Save profile to Supabase ---
     const payload = {
       email,
+      fullname: form.firstName + (form.middleName ? ` ${form.middleName}` : "") + ` ${form.lastName}`,
       first_name: form.firstName,
       middle_name: form.middleName,
       last_name: form.lastName,
@@ -268,12 +270,18 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
     sessionStorage.setItem("qualification", form.qualification);
     sessionStorage.setItem("stream", form.Stream);
 
-    const { error } = await supabase
-      .from("profiles")
-      .update(payload)
-      .eq("email", email);
+    const { data, error } = await supabase
+  .from("profiles")
+  .upsert(payload, { onConflict: "email" });
+
+  console.log("Profile upsert data:", data, "Error:", error);
+
+if (error) return alert("Failed to save profile. Try again.");
+
 
     if (error) return alert("Failed to save profile. Try again.");
+
+    sessionStorage.setItem("userName", `${form.firstName} ${form.lastName}`);
 
     navigate("/aptitude-landing", { state: { qualification: form.qualification } });
   };
