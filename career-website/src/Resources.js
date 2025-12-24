@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
-import { ScrollText, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { supabase } from "./supabase";
 
+/* ---------- ICONS ---------- */
 
-// STREAM ICONS (for 12th subjects)
 const GradientIcons = {
   Science: (
     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center">
@@ -27,140 +28,77 @@ const GradientIcons = {
   ),
 };
 
-// COLLEGE BIG CATEGORY ICONS
-const CollegeIcons = {
-  CSE: "💻",
-  NonCSE: "📐",
-  Medical: "🩺",
-  Law: "⚖️",
-  Management: "📊",
-  ArtsScience: "🎓",
+/* ---------- STREAM DETECTION ---------- */
+const SubjectIcons = {
+  Physics: "⚛️",
+  Chemistry: "🧪",
+  Biology: "🧬",
+  Botany: "🌱",
+  Zoology: "🐾",
+  Mathematics: "📐",
+  Maths: "📐",
+
+  Accountancy: "📊",
+  Economics: "💹",
+  "Business Studies": "🏢",
+  Commerce: "💼",
+  CSE:"💻",
+  ECE:"📡",
+  History: "🏛️",
+  Geography: "🌍",
+  PoliticalScience: "🗳️",
+  English: "📖",
+  Tamil: "📝",
 };
 
-// SAMPLE DATA
-const completeData = {
-  "12": { next: "12th" },
-  college: { next: "college_categories" },
+const getStreamFromSubject = (subject = "") => {
+  const science = [
+    "Physics",
+    "Chemistry",
+    "Biology",
+    "Botany",
+    "Zoology",
+    "Mathematics",
+    "Maths",
+  ];
 
-  "12th": {
-    subjects: [
-      {
-        id: "botany",
-        title: "Botany",
-        language: "English",
-        stream: "Science",
-        resources: [{ id: "1", name: "Botany Vol 1", file: "/ebooks/botany_v1.pdf" }],
-      },
-      {
-        id: "zoology",
-        title: "Zoology",
-        language: "Tamil",
-        stream: "Science",
-        resources: [{ id: "1", name: "Zoology Vol 1", file: "/ebooks/zoo.pdf" }],
-      },
-      {
-        id: "physics",
-        title: "Physics",
-        language: "English",
-        stream: "Science",
-        resources: [{ id: "1", name: "Physics Vol 1", file: "/ebooks/phy.pdf" }],
-      },
-      {
-        id: "accountancy",
-        title: "Accountancy",
-        language: "English",
-        stream: "Commerce",
-        resources: [{ id: "1", name: "Accountancy Guide", file: "/ebooks/acc.pdf" }],
-      },
-      {
-        id: "history",
-        title: "History",
-        language: "Tamil",
-        stream: "Arts",
-        resources: [{ id: "1", name: "Indian History", file: "/ebooks/his.pdf" }],
-      },
-    ],
-  },
+  const commerce = [
+    "Accountancy",
+    "Economics",
+    "Business Studies",
+    "Commerce",
+  ];
 
-  college_categories: {
-    categories: [
-      { id: "CSE", title: "CSE" },
-      { id: "NonCSE", title: "Non-CSE" },
-      { id: "Medical", title: "Medical" },
-      { id: "Law", title: "Law" },
-      { id: "Management", title: "Management" },
-      { id: "ArtsScience", title: "Arts & Science" },
-    ],
-  },
-
-  CSE: {
-    subjects: [
-      { id: "ds", title: "Data Structures", language: "English", stream: "Science", resources: [{ id: "1", name: "DSA Notes", file: "/ebooks/dsa.pdf" }] },
-      { id: "dbms", title: "DBMS", language: "English", stream: "Science", resources: [{ id: "1", name: "DBMS Notes", file: "/ebooks/dbms.pdf" }] },
-    ],
-  },
-
-  NonCSE: {
-    subjects: [
-      { id: "mech", title: "Mechanical Basics", language: "English", stream: "Science", resources: [{ id: "1", name: "Thermo Notes", file: "/ebooks/mech.pdf" }] },
-    ],
-  },
-
-  Medical: {
-    subjects: [
-      { id: "anatomy", title: "Anatomy", language: "English", stream: "Science", resources: [{ id: "1", name: "Anatomy Notes", file: "/ebooks/ana.pdf" }] },
-    ],
-  },
-
-  Law: {
-    subjects: [
-      { id: "criminal-law", title: "Criminal Law", language: "Arts", stream: "Arts", resources: [{ id: "1", name: "Criminal Law Guide", file: "/ebooks/law.pdf" }] },
-    ],
-  },
-
-  Management: {
-    subjects: [
-      { id: "marketing", title: "Marketing", language: "Commerce", stream: "Commerce", resources: [{ id: "1", name: "Marketing Basics", file: "/ebooks/marketing.pdf" }] },
-    ],
-  },
-
-  ArtsScience: {
-    subjects: [
-      { id: "psychology", title: "Psychology", language: "Arts", stream: "Arts", resources: [{ id: "1", name: "Psychology Notes", file: "/ebooks/psy.pdf" }] },
-    ],
-  },
+  if (science.includes(subject)) return "Science";
+  if (commerce.includes(subject)) return "Commerce";
+  return "Arts";
 };
+
+/* ---------- COMPONENT ---------- */
 
 export default function EBooks() {
   const heroRef = useRef(null);
 
   const [category, setCategory] = useState("12");
-  const [selectedCollegeCat, setSelectedCollegeCat] = useState(null);
+  const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
+
   const [searchSubject, setSearchSubject] = useState("");
   const [searchResource, setSearchResource] = useState("");
   const [language, setLanguage] = useState("All");
 
-  const level = completeData[category]?.next;
+  const [loading, setLoading] = useState(true);
 
-  const subjects = selectedCollegeCat
-    ? completeData[selectedCollegeCat].subjects
-    : completeData[level]?.subjects || [];
-
-  const filteredSubjects = subjects.filter((s) =>
-    s.title.toLowerCase().includes(searchSubject.toLowerCase())
-  );
+  /* ---------- ANIMATION ---------- */
 
   useEffect(() => {
     if (heroRef.current) {
-      // Hero fade in
       gsap.fromTo(
         heroRef.current,
-        { opacity: 0, y: -50 },
+        { opacity: 0, y: -40 },
         { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }
       );
 
-      // Floating bubbles
       gsap.to(".floating-shape", {
         y: "-=20",
         repeat: -1,
@@ -170,237 +108,233 @@ export default function EBooks() {
         stagger: 0.3,
       });
     }
-
-    
   }, []);
 
+  const SubjectIcon = ({ subject, stream }) => {
+  const icon = SubjectIcons[subject];
+
+  return (
+    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center">
+      <span className="text-white text-2xl">
+        {icon || (stream === "Science" ? "🔬" : stream === "Commerce" ? "💼" : "🎨")}
+      </span>
+    </div>
+  );
+};
+
+
+  /* ---------- FETCH SUPABASE DATA ---------- */
+
   useEffect(() => {
-  setLanguage("All");
-  setSearchResource(""); // optional: reset resource search too
-}, [selectedSubject]);
+    const fetchResources = async () => {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("resource")
+        .select("*")
+        .eq("category", category === "12" ? "12th" : "College")
+        .order("created_at", { ascending: false });
+      console.log("Supabase data:", data);
+      console.log("Error:", error);
 
 
-  const handleBack = () => {
-  // If inside a college subject (resources page), go directly to category list
-  if (selectedSubject && selectedCollegeCat) {
-    setSelectedSubject(null);
-    setSelectedCollegeCat(null);
-    return;
+      if (error) {
+        console.error("Supabase error:", error);
+        setLoading(false);
+        return;
+      }
+
+      const grouped = {};
+
+data.forEach((row) => {
+  if (!grouped[row.subjects]) {
+    grouped[row.subjects] = {
+      id: row.subjects,
+      title: row.subjects,
+      stream: getStreamFromSubject(row.subjects),
+      resources: [],
+    };
   }
 
-  // Normal 12th behavior
-  if (selectedSubject) {
-    setSelectedSubject(null);
-    return;
-  }
-
-  if (selectedCollegeCat) {
-    setSelectedCollegeCat(null);
-    return;
-  }
-};
+  grouped[row.subjects].resources.push({
+    id: row.id,
+    name: row.title || row.subjects,
+    file: row.data,
+    description: row.description,
+    language: row.language?.trim(), // ✅ normalize
+  });
+});
 
 
-  const handleCollegeClick = (catId) => {
-  setSelectedCollegeCat(catId);
+      setSubjects(Object.values(grouped));
+      setSelectedSubject(null);
+      setLoading(false);
+    };
+    
+    fetchResources();
+    
+  }, [category]);
 
-  // open first subject instantly (skip middle subject page)
-  const firstSubject = completeData[catId]?.subjects?.[0];
+  /* ---------- FILTER SUBJECTS ---------- */
 
-  if (firstSubject) {
-    setSelectedSubject(firstSubject);
-  }
-};
+  const filteredSubjects = subjects.filter((s) =>
+    s.title.toLowerCase().includes(searchSubject.toLowerCase())
+  );
 
+  /* ---------- UI ---------- */
 
   return (
     <div className="flex flex-col min-h-screen font-[Poppins]">
       {/* HERO */}
       <section
         ref={heroRef}
-        className="relative bg-gradient-to-r from-blue-600 to-indigo-600
-        text-white py-20 px-6 md:px-16 rounded-b-3xl overflow-hidden shadow-lg"
+        className="relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-20 px-6 rounded-b-3xl overflow-hidden"
       >
-        {/* Floating shapes */}
+         {/* Floating shapes */}
         <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
         <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
         <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
         <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
 
-        {/* Content */}
-        <div className="relative z-10 max-w-3xl mx-auto text-center">
-          <h1 className="flex justify-center items-center gap-3 text-4xl md:text-5xl font-extrabold">
-            <span className="animate-bounce">📚</span>
-            Explore E-Books
-          </h1>
-          <p className="mt-3 text-lg text-blue-100">
-            Read, learn, and grow with a wide collection of digital books across multiple domains.
+        <div className="relative z-10 text-center">
+          <h1 className="text-4xl font-extrabold">📚 Explore E-Books</h1>
+          <p className="mt-3 text-blue-100">
+            Learn with curated digital study materials
           </p>
         </div>
 
-        <Sparkles className="absolute top-10 right-10 w-16 h-16 text-white opacity-20 animate-spin-slow" />
+        <Sparkles className="absolute top-10 right-10 w-16 h-16 opacity-20" />
       </section>
-
 
       <main className="flex-grow bg-gray-50">
         <div className="max-w-6xl mx-auto px-6 py-10">
-          
 
-          {/* SEARCH + CATEGORY */}
-          {!selectedSubject && !selectedCollegeCat && (
-            <div className="flex justify-between items-center gap-4 mb-8 flex-wrap">
-              <input
-                type="text"
-                placeholder="Search subjects..."
-                className="p-3 border rounded-lg w-60"
-                value={searchSubject}
-                onChange={(e) => setSearchSubject(e.target.value)}
-              />
+        {/* CONTROLS BAR */}
+<div className="max-w-7xl mx-auto w-full px-6 -mt-16 relative z-20">
+  <div className="bg-white p-6 rounded-2xl shadow-lg border border-purple-100 flex flex-col xl:flex-row gap-6 items-center justify-between">
 
-              <div className="flex items-center gap-3">
-  <label className="font-medium text-gray-700">Category:</label>
-  <select
-    className="p-3 border rounded-lg w-48"
-    value={category}
-    onChange={(e) => {
-      setCategory(e.target.value);
-      setSelectedCollegeCat(null);
-      setSelectedSubject(null);
-    }}
-  >
-    <option value="12">12th</option>
-    <option value="college">College</option>
-  </select>
+    {/* SEARCH + CATEGORY */}
+    {!selectedSubject && (
+      <div className="flex flex-wrap gap-6 justify-between w-full">
+        <input
+          type="text"
+          placeholder="Search subjects..."
+          className="p-3 border rounded-xl w-full md:w-80"
+          value={searchSubject}
+          onChange={(e) => setSearchSubject(e.target.value)}
+        />
+
+        <select
+          className="p-3 border rounded-xl w-full md:w-56"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          <option value="12">12th</option>
+          <option value="college">College</option>
+        </select>
+      </div>
+    )}
+
+  </div>
 </div>
-            </div>
-          )}
 
-          {/* BACK BUTTON */}
-          {(selectedCollegeCat || selectedSubject) && (
+
+          {/* BACK */}
+          {selectedSubject && (
             <button
               className="mb-6 px-4 py-2 bg-gray-200 rounded-lg"
-              onClick={handleBack}
+              onClick={() => setSelectedSubject(null)}
             >
               ← Back
             </button>
           )}
 
-          {/* COLLEGE CATEGORY GRID */}
-          {category === "college" && !selectedCollegeCat && !selectedSubject && (
+          {/* LOADING */}
+          {loading && (
+            <p className="text-center text-gray-500">
+              Loading resources...
+            </p>
+          )}
+
+          {/* SUBJECT GRID */}
+          {!loading && !selectedSubject && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {completeData.college_categories.categories.map((cat) => (
+              {filteredSubjects.map((sub) => (
                 <div
-                  key={cat.id}
-                  onClick={() => handleCollegeClick(cat.id)}
-                  className="p-6 bg-white shadow rounded-xl hover:shadow-xl hover:scale-105 transition cursor-pointer flex flex-col items-center"
+                  key={sub.id}
+                  onClick={() => setSelectedSubject(sub)}
+                  className="p-6 bg-white shadow rounded-xl hover:shadow-xl cursor-pointer flex flex-col items-center"
                 >
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-2xl">
-                    {CollegeIcons[cat.id]}
-                  </div>
-                  <h3 className="text-xl font-bold mt-4 text-center">{cat.title}</h3>
+                  <SubjectIcon subject={sub.title} stream={sub.stream} />
+                  <h3 className="text-xl font-bold mt-4">{sub.title}</h3>
                 </div>
               ))}
+
+              {filteredSubjects.length === 0 && (
+                <p className="text-gray-500">No subjects found.</p>
+              )}
             </div>
           )}
 
-          {/* SUBJECT LISTS */}
-          {!selectedSubject && (
+          {/* RESOURCES */}
+          {selectedSubject && (
             <>
-              {/* 12TH SUBJECTS → CARD VIEW */}
-              {level === "12th" && !selectedCollegeCat && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {filteredSubjects.map((sub) => (
-                    <div
-                      key={sub.id}
-                      onClick={() => setSelectedSubject(sub)}
-                      className="p-6 bg-white shadow rounded-xl hover:shadow-xl hover:-translate-y-1 transition cursor-pointer flex flex-col items-center"
-                    >
-                      {GradientIcons[sub.stream] || GradientIcons.Default}
-                      <h3 className="text-xl font-bold mt-4">{sub.title}</h3>
-                    </div>
-                  ))}
+              <div className="flex gap-4 mb-6">
+                <input
+                  type="text"
+                  placeholder="Search resources..."
+                  className="p-3 border rounded-lg w-80"
+                  value={searchResource}
+                  onChange={(e) => setSearchResource(e.target.value)}
+                />
 
-                  {filteredSubjects.length === 0 && (
-                    <p className="text-gray-500">No subjects found.</p>
-                  )}
-                </div>
-              )}
+                <select
+                  className="p-3 border rounded-lg w-40 ml-auto"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                >
+                  <option value="All">All Languages</option>
+                  <option value="English">English</option>
+                  <option value="Tamil">Tamil</option>
+                </select>
+              </div>
 
-              {/* COLLEGE SUBJECTS → LIST VIEW */}
-              {selectedCollegeCat && (
-                <div className="space-y-4">
-                  {filteredSubjects.map((sub) => (
-                    <div
-                      key={sub.id}
-                      onClick={() => setSelectedSubject(sub)}
-                      className="flex items-center gap-4 p-4 bg-white rounded-xl shadow cursor-pointer hover:bg-gray-100 transition"
-                    >
-                      
-                    </div>
-                  ))}
+              <div className="space-y-4">
+                {selectedSubject.resources
+  .filter((r) => {
+  const langMatch =
+    language === "All" ||
+    r.language?.toLowerCase() === language.toLowerCase();
 
-                  {filteredSubjects.length === 0 && (
-                    <p className="text-gray-500">No subjects found.</p>
-                  )}
-                </div>
-              )}
+  const searchMatch =
+    r.name?.toLowerCase().includes(searchResource.toLowerCase());
+
+  return langMatch && searchMatch;
+})
+
+  .map((res) => (
+    <div key={res.id} className="p-4 bg-white shadow rounded-xl">
+      <a
+        href={res.file}
+        target="_blank"
+        rel="noreferrer"
+        className="block p-3 bg-gray-50 rounded-md hover:bg-gray-100"
+      >
+        📄 <strong>{res.name}</strong>
+        <p className="text-sm text-gray-500 mt-1">
+          {res.description}
+        </p>
+      </a>
+    </div>
+  ))}
+
+
+                {selectedSubject.resources.length === 0 && (
+                  <p className="text-gray-500">No resources found.</p>
+                )}
+              </div>
             </>
           )}
-
-          {/* RESOURCES */}
-{selectedSubject && (
-  <div>
-    <div className="flex flex-wrap gap-4 mb-6 items-center">
-      <input
-  type="text"
-  placeholder="Search resources..."
-  className="p-3 border rounded-lg w-100" // fixed width
-  value={searchResource}
-  onChange={(e) => setSearchResource(e.target.value)}
-/>
-
-
-      <select
-        className="p-3 border rounded-lg w-40 ml-auto" // move to right
-        value={language}
-        onChange={(e) => setLanguage(e.target.value)}
-      >
-        <option value="All">All Languages</option>
-        <option value="English">English</option>
-        <option value="Tamil">Tamil</option>
-      </select>
-    </div>
-
-    <div className="space-y-4">
-      {selectedSubject.resources
-        .filter((r) => {
-          const languageMatch = language === "All" || selectedSubject.language === language;
-          const resourceMatch = r.name.toLowerCase().includes(searchResource.toLowerCase());
-          return languageMatch && resourceMatch;
-        })
-        .map((res) => (
-          <div key={res.id} className="p-4 bg-white shadow rounded-xl">
-            <a
-              href={res.file}
-              target="_blank"
-              className="block p-3 bg-gray-50 rounded-md hover:bg-gray-100 text-gray-800"
-            >
-              📄 {res.name}
-            </a>
-          </div>
-        ))}
-
-      {selectedSubject.resources.filter((r) => {
-        const languageMatch = language === "All" || selectedSubject.language === language;
-        const resourceMatch = r.name.toLowerCase().includes(searchResource.toLowerCase());
-        return languageMatch && resourceMatch;
-      }).length === 0 && (
-        <p className="text-gray-500">No resources found.</p>
-      )}
-    </div>
-  </div>
-)}
-
         </div>
       </main>
 

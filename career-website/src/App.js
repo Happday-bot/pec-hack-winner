@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,6 +7,7 @@ import {
   Link,
   useLocation,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
 import { Bell, User } from "lucide-react";
 
@@ -41,18 +43,20 @@ import AuthCallback from "./auth/callback";
 function Navbar({ onLogout }) {
   const location = useLocation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
+  const navigate = useNavigate();
   const navItems = [
     { to: "/dashboard", label: "Dashboard" },
     { to: "/courses", label: "Courses" },
     { to: "/careerPaths", label: "Career Paths" },
     { to: "/colleges", label: "Colleges" },
     { to: "/scholarships", label: "Scholarships" },
-    { to: "/resources", label: "Resources" },
     { to: "/exam", label: "Examinations" },
+    { to: "/resources", label: "Resources" },
+    
   ];
 
   return (
+
     <nav className="backdrop-blur-md bg-white/80 shadow-sm border-b border-gray-200 flex items-center justify-between px-8 py-4 sticky top-0 z-50">
       {/* Left Navigation Items */}
       <div className="flex items-center justify-between w-[55%]">
@@ -74,9 +78,7 @@ function Navbar({ onLogout }) {
       <div className="flex items-center space-x-4 relative">
         {/* Aptitude Test Button */}
         <button
-          onClick={() => {
-            window.location.href = "/aptitude-landing";
-          }}
+          onClick={() => navigate("/aptitude-landing")}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition"
         >
           Aptitude Test
@@ -148,16 +150,25 @@ function PrivateRoute({ isAuthenticated, children }) {
 function App() {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(
-    () => localStorage.getItem("isAuthenticated") === "true"
+    () => sessionStorage.getItem("isAuthenticated") === "true"
   );
 
+  // useEffect(() => {
+  //   const storedAuth = sessionStorage.getItem("isAuthenticated");
+  //   if (storedAuth === "true") {
+  //     setIsAuthenticated(true);
+  //   }
+  // }, []);
+
+
   const handleLogin = () => {
-    localStorage.setItem("isAuthenticated", "true");
+    sessionStorage.setItem("isAuthenticated", "true");
     setIsAuthenticated(true);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
+    sessionStorage.removeItem("isAuthenticated");
+    sessionStorage.clear();
     setIsAuthenticated(false);
   };
 
@@ -181,7 +192,7 @@ function App() {
 
   return (
     <>
-      {showNavbar && <Navbar onLogout={handleLogout} />}
+      {showNavbar && location.pathname !== "/test" && <Navbar onLogout={handleLogout} />}
 
       <Routes>
         {/* Public Pages */}
@@ -199,16 +210,7 @@ function App() {
         <Route
           path="/aptitude-landing"
           element={
-            <AptitudeLanding
-              onStartTest={() => {
-                const qualification = localStorage.getItem("qualification");
-                if (qualification === "10") {
-                  window.location.href = "/test1";
-                } else {
-                  window.location.href = "/test";
-                }
-              }}
-            />
+            <AptitudeLanding />
           }
         />
 

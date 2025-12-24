@@ -1,317 +1,221 @@
 import React, { useState, useEffect, useRef } from "react";
-import { XCircle } from "lucide-react";
-import { Search, X, Sparkles } from "lucide-react";
+import { XCircle, Sparkles, CheckCircle2, ArrowRightCircle, BookOpen, Layout } from "lucide-react";
 import gsap from "gsap";
-
-
+import { supabase } from "./supabase";
 
 const RoadmapPage = ({ course, goBack }) => {
   const [roadmap, setRoadmap] = useState({});
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [requiredSkills, setRequiredSkills] = useState([]);
-const [projects, setProjects] = useState([]);
-
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
   const heroRef = useRef(null);
 
   useEffect(() => {
-    if (heroRef.current) {
-      gsap.fromTo(
-        heroRef.current,
-        { opacity: 0, y: -50 },
-        { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }
-      );
-    }
-    gsap.to(".floating-shape", {
-      y: "-=20",
-      repeat: -1,
-      yoyo: true,
-      duration: 2,
-      ease: "sine.inOut",
-      stagger: 0.3,
-    });
-  }, []);
-  useEffect(() => {
-    // Full roadmap data for each career
-    const fullRoadmap = {
-      "Frontend Developer": {
-        Beginner: [
-          { id: "s1", title: "HTML & CSS Basics", desc: "Learn HTML & CSS fundamentals.", resources: [{ title: "MDN HTML", url: "https://developer.mozilla.org/", resource_type: "Docs" }] },
-          { id: "s2", title: "JavaScript Basics", desc: "Understand JS variables, loops, DOM.", resources: [{ title: "Eloquent JS", url: "https://eloquentjavascript.net/", resource_type: "Book" }] },
-        ],
-        Intermediate: [
-          { id: "s3", title: "React Basics", desc: "Props, state, hooks.", resources: [{ title: "React Docs", url: "https://reactjs.org/", resource_type: "Docs" }] },
-          { id: "s12", title: "CSS Flex & Grid", desc: "Layout designs using flexbox and grid.", resources: [{ title: "CSS Tricks", url: "https://css-tricks.com/", resource_type: "Docs" }] },
-        ],
-        Advanced: [
-          { id: "s4", title: "System Design", desc: "Learn scalable architecture.", resources: [{ title: "System Design Primer", url: "https://github.com/donnemartin/system-design-primer", resource_type: "Repo" }] },
-          { id: "s13", title: "Performance Optimization", desc: "Optimize web app performance.", resources: [{ title: "Web.dev", url: "https://web.dev/performance/", resource_type: "Docs" }] },
-        ],
-      },
-      "Backend Developer": {
-        Beginner: [
-          { id: "s5", title: "Python / Java Basics", desc: "Fundamentals of backend programming.", resources: [{ title: "Python for Everyone", url: "https://example.com", resource_type: "Course" }] },
-          { id: "s14", title: "REST APIs", desc: "Learn how to build RESTful APIs.", resources: [{ title: "REST API Tutorial", url: "https://restfulapi.net/", resource_type: "Docs" }] },
-        ],
-        Intermediate: [
-          { id: "s15", title: "Authentication & Security", desc: "JWT, OAuth, and session management.", resources: [{ title: "Auth0 Docs", url: "https://auth0.com/docs", resource_type: "Docs" }] },
-          { id: "s16", title: "Caching & Optimization", desc: "Use Redis and caching strategies.", resources: [{ title: "Redis Docs", url: "https://redis.io/docs", resource_type: "Docs" }] },
-        ],
-        Advanced: [
-          { id: "s6", title: "Database Management", desc: "SQL, NoSQL DBs.", resources: [{ title: "PostgreSQL Docs", url: "https://postgresql.org", resource_type: "Docs" }] },
-          { id: "s17", title: "Microservices Architecture", desc: "Design scalable microservices.", resources: [{ title: "Microservices Guide", url: "https://microservices.io/", resource_type: "Docs" }] },
-        ],
-      },
-      "Data Scientist": {
-        Beginner: [
-          { id: "s18", title: "Python for Data", desc: "Learn Python basics for data analysis.", resources: [{ title: "Kaggle Python", url: "https://www.kaggle.com/learn/python", resource_type: "Course" }] },
-          { id: "s19", title: "Data Visualization", desc: "Use Matplotlib and Seaborn.", resources: [{ title: "Seaborn Docs", url: "https://seaborn.pydata.org/", resource_type: "Docs" }] },
-        ],
-        Intermediate: [
-          { id: "s7", title: "Statistics & Probability", desc: "Learn stats for data analysis.", resources: [{ title: "Khan Academy", url: "https://www.khanacademy.org/", resource_type: "Course" }] },
-          { id: "s20", title: "Data Cleaning & Preprocessing", desc: "Handle missing data, outliers, normalization.", resources: [{ title: "Pandas Docs", url: "https://pandas.pydata.org/", resource_type: "Docs" }] },
-        ],
-        Advanced: [
-          { id: "s21", title: "Machine Learning Models", desc: "Supervised and unsupervised learning.", resources: [{ title: "Scikit-Learn Docs", url: "https://scikit-learn.org/", resource_type: "Docs" }] },
-          { id: "s22", title: "Deep Learning", desc: "Neural networks and CNNs.", resources: [{ title: "TensorFlow Docs", url: "https://tensorflow.org", resource_type: "Docs" }] },
-        ],
-      },
-      "UI/UX Designer": {
-        Beginner: [
-          { id: "s8", title: "Figma Basics", desc: "Learn Figma for UI design.", resources: [{ title: "Figma Tutorial", url: "https://example.com", resource_type: "Video" }] },
-          { id: "s23", title: "Color Theory & Typography", desc: "Learn design principles for UI.", resources: [{ title: "Design Basics", url: "https://example.com", resource_type: "Docs" }] },
-        ],
-        Intermediate: [
-          { id: "s24", title: "Wireframing & Prototyping", desc: "Create interactive prototypes.", resources: [{ title: "Figma Docs", url: "https://help.figma.com/", resource_type: "Docs" }] },
-          { id: "s25", title: "User Research", desc: "Conduct usability testing and surveys.", resources: [{ title: "NNG UX Research", url: "https://www.nngroup.com/", resource_type: "Docs" }] },
-        ],
-        Advanced: [
-          { id: "s26", title: "Design Systems", desc: "Build scalable UI components.", resources: [{ title: "Material Design", url: "https://material.io/", resource_type: "Docs" }] },
-          { id: "s27", title: "Advanced Interaction Design", desc: "Animations and micro-interactions.", resources: [{ title: "UX Collective", url: "https://uxdesign.cc/", resource_type: "Article" }] },
-        ],
-      },
-      "Doctor": {
-        Beginner: [
-          { id: "s9", title: "Medical Basics", desc: "Biology & Anatomy fundamentals.", resources: [{ title: "MedlinePlus", url: "https://medlineplus.gov/", resource_type: "Docs" }] },
-          { id: "s28", title: "Physiology Basics", desc: "Understand human body functions.", resources: [{ title: "Physiology Online", url: "https://www.physiology.org/", resource_type: "Docs" }] },
-        ],
-        Intermediate: [
-          { id: "s29", title: "Pathology & Diagnosis", desc: "Learn common diseases and diagnostics.", resources: [{ title: "Pathology Guide", url: "https://example.com", resource_type: "Docs" }] },
-          { id: "s30", title: "Medical Ethics", desc: "Understand patient care ethics.", resources: [{ title: "Ethics Resource", url: "https://example.com", resource_type: "Docs" }] },
-        ],
-        Advanced: [
-          { id: "s31", title: "Advanced Clinical Practice", desc: "Specialist medical procedures.", resources: [{ title: "Clinical Docs", url: "https://example.com", resource_type: "Docs" }] },
-          { id: "s32", title: "Research & Publications", desc: "Medical research and paper writing.", resources: [{ title: "PubMed", url: "https://pubmed.ncbi.nlm.nih.gov/", resource_type: "Docs" }] },
-        ],
-      },
-      "Machine Learning Engineer": {
-        Beginner: [
-          { id: "s33", title: "Python for ML", desc: "Python fundamentals for ML.", resources: [{ title: "Kaggle Python", url: "https://www.kaggle.com/learn/python", resource_type: "Course" }] },
-          { id: "s34", title: "Linear Algebra & Calculus", desc: "Math foundation for ML.", resources: [{ title: "Khan Academy Math", url: "https://www.khanacademy.org/", resource_type: "Course" }] },
-        ],
-        Intermediate: [
-          { id: "s10", title: "ML Algorithms", desc: "Supervised & Unsupervised learning.", resources: [{ title: "ML by Andrew Ng", url: "https://coursera.org", resource_type: "Course" }] },
-          { id: "s35", title: "Data Preprocessing & Feature Engineering", desc: "Clean and transform data for models.", resources: [{ title: "Kaggle Docs", url: "https://www.kaggle.com/", resource_type: "Docs" }] },
-        ],
-        Advanced: [
-          { id: "s11", title: "Deep Learning", desc: "Neural networks & CNNs.", resources: [{ title: "TensorFlow Docs", url: "https://tensorflow.org", resource_type: "Docs" }] },
-          { id: "s36", title: "Deployment & MLOps", desc: "Deploy ML models in production.", resources: [{ title: "MLflow Docs", url: "https://mlflow.org/", resource_type: "Docs" }] },
-        ],
-      },
+    const fetchData = async () => {
+      // 1. Safety check to ensure course object exists
+      if (!course || !course.id) return;
+
+      setLoading(true);
+      try {
+        const { data: steps } = await supabase
+          .from('career_roadmap_steps')
+          .select(`*, roadmap_step_resources (*)`)
+          .eq('career_id', course.id)
+          .order('order_index');
+        
+        if (steps) {
+          const grouped = steps.reduce((acc, s) => {
+            if (!acc[s.level]) acc[s.level] = [];
+            acc[s.level].push({ 
+              id: s.id, 
+              title: s.title, 
+              desc: s.description, 
+              resources: s.roadmap_step_resources || [] 
+            });
+            return acc;
+          }, {});
+          setRoadmap(grouped);
+        }
+
+        const { data: assets } = await supabase
+          .from('career_assets')
+          .select('name, asset_type')
+          .eq('career_id', course.id);
+
+        if (assets) {
+          setRequiredSkills(assets.filter(a => a.asset_type === 'skill').map(a => a.name));
+          setProjects(assets.filter(a => a.asset_type === 'project').map(a => a.name));
+        }
+      } catch (err) { 
+        console.error("Database error:", err); 
+      } finally { 
+        setLoading(false); 
+      }
     };
 
-    const careerExtras = {
-  "Frontend Developer": {
-    skills: [
-      "HTML", "CSS", "JavaScript", "React", "Flexbox & Grid", "Responsive Design", "Version Control (Git)"
-    ],
-    projects: [
-      "Portfolio Website", "E-commerce Website", "Landing Page Clone", "Interactive Quiz App"
-    ]
-  },
-  "Backend Developer": {
-    skills: [
-      "Python / Java", "REST APIs", "Database Management", "Authentication", "Caching", "Microservices"
-    ],
-    projects: [
-      "REST API for Todo App", "Blog API", "Authentication System", "E-commerce Backend"
-    ]
-  },
-  "Data Scientist": {
-    skills: [
-      "Python", "Data Visualization", "Statistics", "Data Cleaning", "Machine Learning", "Deep Learning"
-    ],
-    projects: [
-      "Sales Prediction Model", "Customer Segmentation", "Stock Price Prediction", "Image Classification"
-    ]
-  },
-  "UI/UX Designer": {
-    skills: [
-      "Figma", "Wireframing", "Prototyping", "User Research", "Color Theory", "Typography", "Interaction Design"
-    ],
-    projects: [
-      "Portfolio Redesign", "Mobile App Prototype", "Website Wireframe", "UI Case Study"
-    ]
-  },
-  "Doctor": {
-    skills: [
-      "Anatomy", "Physiology", "Pathology", "Diagnostics", "Medical Ethics", "Clinical Practice"
-    ],
-    projects: [
-      "Patient Case Study", "Medical Research Paper", "Clinical Observation Log"
-    ]
-  },
-  "Machine Learning Engineer": {
-    skills: [
-      "Python", "Linear Algebra", "Calculus", "ML Algorithms", "Data Preprocessing", "Deep Learning", "Deployment"
-    ],
-    projects: [
-      "ML Model Deployment", "Image Recognition App", "Recommendation System", "Time Series Forecasting"
-    ]
-  }
-};
-
-
-    setRoadmap(fullRoadmap[course.title] || {});
-    setRequiredSkills(careerExtras[course.title]?.skills || []);
-setProjects(careerExtras[course.title]?.projects || []);
-
+    fetchData();
   }, [course]);
 
+  // 2. Simple Entrance Animation
+  useEffect(() => {
+    if (!loading && heroRef.current) {
+      gsap.fromTo(heroRef.current, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 1 });
+    }
+  }, [loading]);
+
+  // Loading state while fetching
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white font-bold text-indigo-600">
+        Loading Roadmap...
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white flex flex-col relative">
-      <section
-        ref={heroRef}
-        className="relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-20 px-6 md:px-16 rounded-b-3xl overflow-hidden shadow-lg"
-      >
-        <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
-        <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
-        <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
-        <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
-
-        <button
-          onClick={goBack}
-          className="absolute left-14 top-1/2 -translate-y-1/2 bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium shadow hover:bg-gray-100"
-        >
-          Back
-        </button>
-        <h1 className="text-4xl md:text-5xl font-extrabold mb-3 text-center">{course.title}</h1>
-    
-        
-        <Sparkles className="absolute top-10 right-10 w-16 h-16 text-white opacity-20 animate-spin-slow" />
-      </section>
+    <div className="min-h-screen bg-indigo-50/30 flex flex-col font-sans">
       
+      {/* --- INDIGO HERO SECTION --- */}
+      <section ref={heroRef} className="relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-20 px-6 rounded-b-[3rem] shadow-xl overflow-hidden">
+        <div className="absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
+        <div className="absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
 
-    <main className="flex-1 flex flex-col justify-center items-center px-6 py-10 max-w-5xl mx-auto mt-16 ">
-  {/* ====== ROADMAP TITLE ====== */}
-  <div className="w-full mb-7">
-    <h2 className="text-2xl md:text-3xl font-extrabold text-indigo-900">
-      Roadmap for {course.title}
-    </h2>
-  </div>
+        <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-center">
+          <button 
+            onClick={goBack} 
+            className="absolute left-0 top-0 bg-white text-indigo-600 px-4 py-2 rounded-lg font-bold shadow-md hover:bg-gray-100 transition-all"
+          >
+            Back
+          </button>
+          
+          {/* RENDER TITLE DIRECTLY TO AVOID SPLIT ERRORS */}
+          <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight text-center leading-tight">
+            {course.title || "Career Roadmap"}
+          </h1>
+          
+          <p className="text-indigo-100 max-w-2xl text-lg font-medium text-center">
+            Your step-by-step master guide to reaching your goal.
+          </p>
+          <Sparkles className="mt-6 w-12 h-12 text-white/30 animate-pulse" />
+        </div>
+      </section>
 
-  {/* ====== ROADMAP CARDS ====== */}
-  {Object.keys(roadmap).length === 0 ? (
-    <p className="text-gray-600 text-center">No roadmap found for this career.</p>
-  ) : (
-    Object.keys(roadmap).map((level) => (
-      <div key={level} className="w-full mb-12">
-        <h2 className="text-xl font-semibold mb-6 text-indigo-700 border-l-4 border-indigo-500 pl-3">
-          {level} Level
-        </h2>
-        <div className="flex justify-center items-center gap-5 flex-wrap">
-          {roadmap[level].map((node, index) => (
-            <div key={node.id} className="flex items-center">
-              <div
-                className="p-5 w-56 h-48 bg-white rounded-2xl shadow hover:shadow-lg border border-indigo-100 cursor-pointer transition transform hover:-translate-y-1 flex flex-col justify-center items-center text-center"
-                onClick={() => setSelectedSkill(node)}
-              >
-                <h3 className="font-bold text-indigo-700 mb-2">{node.title}</h3>
-                <p className="text-gray-600 text-sm">{node.desc}</p>
+      {/* --- VERTICAL TIMELINE ROADMAP --- */}
+      <main className="max-w-4xl mx-auto px-6 py-20 w-full">
+        <div className="relative">
+          {/* Central Vertical Line */}
+          <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-1 bg-indigo-200 -translate-x-1/2 rounded-full"></div>
+
+          {Object.entries(roadmap).map(([level, items]) => (
+            <div key={level} className="mb-20 relative">
+              {/* Level Indicator Badge */}
+              <div className="flex justify-center mb-12">
+                <span className="relative z-10 bg-indigo-600 px-6 py-2 rounded-full text-sm font-black text-white uppercase tracking-widest shadow-lg">
+                  {level} Phase
+                </span>
               </div>
 
-              {index < roadmap[level].length - 1 && (
-                <svg className="mx-10" width="120" height="20" viewBox="0 0 120 20" fill="none" stroke="#6366F1" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="0" y1="10" x2="100" y2="10" />
-                  <polyline points="100,5 115,10 100,15" />
-                </svg>
-              )}
+              <div className="space-y-12">
+                {items.map((step, idx) => (
+                  <div 
+                    key={step.id} 
+                    className={`relative flex flex-col md:flex-row items-center gap-8 ${idx % 2 === 0 ? 'md:flex-row-reverse' : ''}`}
+                  >
+                    {/* The Timeline Circle Dot */}
+                    <div className="absolute left-4 md:left-1/2 w-8 h-8 bg-white border-4 border-indigo-600 rounded-full -translate-x-1/2 z-20 shadow-md"></div>
+                    
+                    {/* The Card */}
+                    <div className="w-full md:w-[45%]">
+                      <div 
+                        onClick={() => setSelectedSkill(step)}
+                        className="p-8 bg-white rounded-3xl shadow-md border border-indigo-50 hover:shadow-xl hover:border-indigo-400 transition-all cursor-pointer group"
+                      >
+                        <h3 className="text-xl font-bold text-indigo-900 mb-3 group-hover:text-indigo-600">
+                          {step.title}
+                        </h3>
+                        <p className="text-gray-600 text-sm leading-relaxed">
+                          {step.desc}
+                        </p>
+                        <div className="mt-6 flex items-center gap-2 text-indigo-500 font-bold text-xs uppercase tracking-wider">
+                          <BookOpen className="w-4 h-4" />
+                          View Details
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
-      </div>
-    ))
-  )}
 
-  {/* ====== REQUIRED SKILLS ====== */}
-  {requiredSkills.length > 0 && (
-    <div className="w-full mt-19 ">
-      <h2 className="text-2xl md:text-3xl font-extrabold text-indigo-900">
-        Required Skills
-      </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5 mt-8">
-        {requiredSkills.map((skill, idx) => (
-          <div
-            key={idx}
-            className="p-5 bg-indigo-100 rounded-xl shadow-lg text-center text-indigo-900 font-bold text-lg"
-          >
-            {skill}
-          </div>
-        ))}
-      </div>
-    </div>
-  )}
-
-  {/* ====== PROJECTS ====== */}
-  {projects.length > 0 && (
-    <div className="w-full mt-16">
-      <h2 className="text-2xl md:text-3xl font-extrabold text-indigo-900">
-        Projects
-      </h2>
-      <div className="flex flex-wrap gap-5 justify-center mt-8">
-        {projects.map((project, idx) => (
-          <div
-            key={idx}
-            className="p-6 w-60 bg-indigo-50 rounded-2xl shadow-xl border-2 border-indigo-300 cursor-pointer text-center font-bold text-indigo-800 text-lg hover:shadow-2xl transition transform hover:-translate-y-1"
-          >
-            {project}
-          </div>
-        ))}
-      </div>
-    </div>
-  )}
-</main>
-
-
-
-      {selectedSkill && (
-        <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-lg border-l border-gray-200 p-6 overflow-y-auto z-50">
-          <button
-            onClick={() => setSelectedSkill(null)}
-            className="absolute top-4 right-4 text-gray-500 hover:text-red-500"
-          >
-            <XCircle className="w-6 h-6" />
-          </button>
-
-          <h2 className="text-2xl font-bold text-indigo-700 mb-4">{selectedSkill.title}</h2>
-          <p className="text-gray-700 mb-6">{selectedSkill.desc}</p>
-
-          <h3 className="text-lg font-semibold text-indigo-600 mb-3">Learning Resources</h3>
-          {selectedSkill.resources.length > 0 ? (
-            <ul className="space-y-3">
-              {selectedSkill.resources.map((res, idx) => (
-                <li key={idx} className="border p-3 rounded-lg hover:bg-indigo-50">
-                  <p className="font-medium text-gray-800">{res.title}</p>
-                  <p className="text-sm text-gray-500 mb-1">{res.resource_type}</p>
-                  <a href={res.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 text-sm hover:underline">
-                    Visit Resource
-                  </a>
-                </li>
+        {/* --- BOTTOM SECTION: SKILLS & PROJECTS --- */}
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-12 border-t border-indigo-100 pt-20">
+          {/* Skills */}
+          <div>
+            <h2 className="text-2xl font-black text-indigo-900 mb-8 flex items-center gap-3">
+              <CheckCircle2 className="text-indigo-500" /> Required Skills
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              {requiredSkills.map((s, i) => (
+                <span key={i} className="px-5 py-2 bg-indigo-100 text-indigo-700 rounded-xl font-bold text-sm shadow-sm">
+                  {s}
+                </span>
               ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">No resources available.</p>
-          )}
+            </div>
+          </div>
+
+          {/* Projects */}
+          <div>
+            <h2 className="text-2xl font-black text-indigo-900 mb-8 flex items-center gap-3">
+              <Layout className="text-indigo-500" /> Suggested Projects
+            </h2>
+            <div className="space-y-4">
+              {projects.map((p, i) => (
+                <div key={i} className="p-5 bg-white border-2 border-indigo-50 rounded-2xl font-bold text-indigo-800 shadow-sm">
+                  {p}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+      </main>
+
+      {/* --- SIDE DRAWER FOR RESOURCES --- */}
+      {selectedSkill && (
+        <>
+          <div className="fixed inset-0 bg-indigo-900/20 backdrop-blur-sm z-40" onClick={() => setSelectedSkill(null)}></div>
+          <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-50 p-10 flex flex-col">
+            <button onClick={() => setSelectedSkill(null)} className="absolute top-6 right-6 text-gray-400 hover:text-red-500 transition-colors">
+              <XCircle className="w-8 h-8" />
+            </button>
+            
+            <h2 className="text-3xl font-black text-indigo-900 mb-6">{selectedSkill.title}</h2>
+            <p className="text-gray-600 mb-12 font-medium border-l-4 border-indigo-500 pl-4">{selectedSkill.desc}</p>
+
+            <h3 className="font-bold text-indigo-900 text-lg mb-6 uppercase tracking-tight">Learning Materials</h3>
+            <div className="space-y-4 overflow-y-auto">
+              {selectedSkill.resources.map((r, i) => (
+                <a 
+                  key={i} 
+                  href={r.url} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="block p-5 rounded-2xl border border-indigo-100 hover:bg-indigo-50 hover:border-indigo-400 transition-all group"
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{r.resource_type}</span>
+                      <p className="font-bold text-gray-800">{r.title}</p>
+                    </div>
+                    <ArrowRightCircle className="w-6 h-6 text-indigo-300 group-hover:text-indigo-600" />
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

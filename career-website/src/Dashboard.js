@@ -15,8 +15,8 @@ const Dashboard = () => {
     if (el && !cardsRef.current.includes(el)) cardsRef.current.push(el);
   };
 
-  // Get user name from localStorage or fallback
-  const name = localStorage.getItem("name") || "User";
+  // Get user name from sessionStorage or fallback
+  const name = sessionStorage.getItem("userName") || "User";
 
   const tips = [
     "Small steps today lead to big success tomorrow.",
