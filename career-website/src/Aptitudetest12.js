@@ -302,7 +302,7 @@ const AptitudeTest = () => {
   const navigate = useNavigate();
 
   // 🔐 Gemini API (COMMENT BEFORE FINAL COMMIT)
-  const ai = new GoogleGenAI({ apiKey: "AIzaSyBkdWhgoXAyP-oLwbV2Bwpq957wa5EL-LQ" });
+  const ai = new GoogleGenAI({ apiKey: "dummy" });
 
   const questions = [
     "What kind of problems do you enjoy solving the most?",
