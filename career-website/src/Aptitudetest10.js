@@ -196,12 +196,6 @@ const AptitudeTest10 = () => {
     };
   };
 
-<<<<<<< HEAD
-const handleGoToDashboard = () => {
-  navigate("/courses");
-};
-
-=======
 const handleGoToDashboard = async () => {
   if (!finalResults) return;
 
@@ -245,7 +239,6 @@ const handleGoToDashboard = async () => {
 
 
 
->>>>>>> cb29118a9f1f6dd734f81014b3acdc9451e76667
   const TOTAL_QUESTIONS = questions.length;
   const progressRatio = currentIndex / (TOTAL_QUESTIONS || 1);
   const ballX = progressRatio * 520;

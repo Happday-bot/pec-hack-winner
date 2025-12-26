@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import React, { useEffect } from "react";
-=======
 import React from "react";
->>>>>>> cb29118a9f1f6dd734f81014b3acdc9451e76667
 import { useNavigate, useLocation } from "react-router-dom";
 
 const AptitudeLanding = () => {
@@ -11,15 +7,7 @@ const AptitudeLanding = () => {
   const qualification = location.state?.qualification || "10"; // default to 10th if not passed
 
   const goToTest = () => {
-<<<<<<< HEAD
-    if (qualification === "10") {
-      navigate("/test1");  // 10th test
-    } else if (qualification === "12") {
-      navigate("/test"); // 12th test
-    }
-=======
       navigate("/test");  // 10th test
->>>>>>> cb29118a9f1f6dd734f81014b3acdc9451e76667
   };
 
   return (
