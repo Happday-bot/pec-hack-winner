@@ -9,14 +9,41 @@ const allSubjects = [
 ];
 
 const indianStates = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
-  "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
-  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
-  "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Jammu & Kashmir",
-  "Ladakh","Puducherry", "Chandigarh"
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu & Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Puducherry",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal"
 ];
+
 
 
 const streamOptions = ["PCMB", "PCM", "PCB", "Commerce", "Arts"];
@@ -53,12 +80,9 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
 
     setForm({
       ...emptyForm,
-      medium: initialData.medium || "",
-      compulsoryLanguage: initialData.Language || "",
+     
       stream: initialData.stream || "",
-      interest: initialData.interest || "",
-      ambition: ambitionOptions.includes(initialData.ambition) ? initialData.ambition : "Others",
-      otherAmbition: !ambitionOptions.includes(initialData.ambition) ? initialData.ambition : "",
+      
       neetScore: initialData.neet_score || "",
       jeeScore: initialData.jee_score || "",
       preferredLocations: initialData.preferred_locations || ["", "", "", "", ""]
@@ -102,16 +126,7 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
   const handleFinish = async (e) => {
     e.preventDefault();
 
-    // Basic Validation
-    if (!form.medium || !form.compulsoryLanguage || !form.stream || !form.interest || !form.ambition) {
-      alert("Please fill all required fields");
-      return;
-    }
-
-    if (selectedSubjects.length === 0) {
-      alert("Select at least one subject");
-      return;
-    }
+    
 
     // Ensure at least 3 locations are filled (optional rule, you can remove if needed)
     const filledLocations = form.preferredLocations.filter((l) => l.trim() !== "");
@@ -122,12 +137,9 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
 
     const finalData = {
       email: email,
-      medium: form.medium,
-      Language: form.compulsoryLanguage,
+      
       stream: form.stream,
-      interest: form.interest,
-      subjects: selectedSubjects, 
-      ambition: form.ambition === "Others" ? form.otherAmbition : form.ambition,
+      
       neet_score: form.neetScore ? parseFloat(form.neetScore) : null,
       jee_score: form.jeeScore ? parseFloat(form.jeeScore) : null,
       preferred_locations: form.preferredLocations // Saving full array [city1, city2...]
@@ -157,31 +169,7 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
     >
       <h2 className="text-2xl font-bold text-gray-800">Profile Setup – 12th</h2>
 
-      {/* Medium & Language */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <select
-          name="medium"
-          value={form.medium}
-          onChange={handleChange}
-          className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-        >
-          <option value="">Medium *</option>
-          <option>English</option>
-          <option>Hindi</option>
-          <option>Urdu</option>
-        </select>
-
-        <select
-          name="compulsoryLanguage"
-          value={form.compulsoryLanguage}
-          onChange={handleChange}
-          className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-        >
-          <option value="">Language *</option>
-          <option>Hindi</option>
-          <option>Urdu</option>
-        </select>
-      </div>
+      
 
       {/* Stream Selection */}
       <select
@@ -196,83 +184,11 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
         ))}
       </select>
 
-      {/* Subjects Selection */}
-      <div>
-        <h3 className="font-semibold mb-2">Subjects</h3>
-        <div className="flex flex-wrap gap-2">
-          {allSubjects.map((sub) => (
-            <button
-              type="button"
-              key={sub}
-              onClick={() => toggleSubject(sub)}
-              className={`px-4 py-2 rounded-full text-sm transition ${
-                selectedSubjects.some((s) => s.name === sub)
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-100 text-gray-600 border hover:bg-gray-200"
-              }`}
-            >
-              {sub}
-            </button>
-          ))}
-        </div>
-      </div>
+      
 
-      {/* Subject Marks Input */}
-      {selectedSubjects.length > 0 && (
-        <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
-          <p className="text-sm font-medium text-gray-500">Enter Marks:</p>
-          {selectedSubjects.map((s, i) => (
-            <div key={i} className="flex items-center gap-4">
-              <span className="w-1/2 text-sm font-bold text-gray-700">{s.name}</span>
-              <input
-                type="number"
-                value={s.marks}
-                onChange={(e) => handleMarksChange(i, e.target.value)}
-                placeholder="Marks"
-                className="w-1/2 border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
-          ))}
-        </div>
-      )}
+     
 
-      {/* Interest & Ambition */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <select
-          name="interest"
-          value={form.interest}
-          onChange={handleChange}
-          className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-        >
-          <option value="">Interest *</option>
-          {interestSubjects.map((i) => (
-            <option key={i}>{i}</option>
-          ))}
-        </select>
-
-        <select
-          name="ambition"
-          value={form.ambition}
-          onChange={handleChange}
-          className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-        >
-          <option value="">Ambition *</option>
-          {ambitionOptions.map((a) => (
-            <option key={a}>{a}</option>
-          ))}
-        </select>
-      </div>
-
-      {form.ambition === "Others" && (
-        <input
-          type="text"
-          name="otherAmbition"
-          value={form.otherAmbition}
-          onChange={handleChange}
-          className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-          placeholder="Specify ambition"
-        />
-      )}
+    
 
       {/* Restored Preferred Locations */}
       <div>

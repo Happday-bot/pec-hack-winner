@@ -176,7 +176,7 @@ export default function SuggestedCourses() {
       </section>
 
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-10">
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mb-10">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-4 top-3 text-gray-400 w-5 h-5" />
             <input
@@ -188,24 +188,32 @@ export default function SuggestedCourses() {
             />
           </div>
 
-          <div className="flex bg-white p-1 rounded-xl shadow-sm border">
-            <button
-              onClick={() => setActiveTab("interest")}
-              className={`px-6 py-2 rounded-lg font-bold transition ${
-                activeTab === "interest" ? "bg-indigo-600 text-white" : "text-gray-500 hover:bg-gray-50"
-              }`}
-            >
-              Based on My Interests
-            </button>
-            <button
-              onClick={() => setActiveTab("eligible")}
-              className={`px-6 py-2 rounded-lg font-bold transition ${
-                activeTab === "eligible" ? "bg-indigo-600 text-white" : "text-gray-500 hover:bg-gray-50"
-              }`}
-            >
-              All Eligible Courses
-            </button>
-          </div>
+          <div className="flex justify-center">
+  <div className="flex bg-white p-1 rounded-xl shadow-sm border">
+    <button
+      onClick={() => setActiveTab("interest")}
+      className={`px-6 py-2 rounded-lg font-bold transition ${
+        activeTab === "interest"
+          ? "bg-indigo-600 text-white"
+          : "text-gray-500 hover:bg-gray-50"
+      }`}
+    >
+      Based on My Interests
+    </button>
+
+    <button
+      onClick={() => setActiveTab("eligible")}
+      className={`px-6 py-2 rounded-lg font-bold transition ${
+        activeTab === "eligible"
+          ? "bg-indigo-600 text-white"
+          : "text-gray-500 hover:bg-gray-50"
+      }`}
+    >
+      All Eligible Courses
+    </button>
+  </div>
+</div>
+
 
           <select
             value={selectedCareer}

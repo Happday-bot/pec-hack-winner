@@ -103,25 +103,6 @@ function SignUp({ onSignup }) {
         setLoading(false);
     };
 
-    const signInWithGoogle = async () => {
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: window.location.origin + "/auth/callback",
-    },
-  });
-};
-
-const signInWithMicrosoft = async () => {
-  await supabase.auth.signInWithOAuth({
-    provider: "azure",
-    options: {
-      redirectTo: window.location.origin + "/auth/callback",
-    },
-  });
-};
-
-
     return (
         <div className="bg-[#EEF0FF] min-h-screen flex items-center justify-center">
             <div className="bg-[#F5F6FF] p-20 rounded-3xl shadow-2xl w-full max-w-2xl border-2 border-[#C7CBFF]">
@@ -205,9 +186,6 @@ const signInWithMicrosoft = async () => {
                         )}
                     </div>
 
-                 
- 
-
                     {/* General error */}
                     {errors.general && (
                         <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl text-center text-sm">
@@ -237,28 +215,9 @@ const signInWithMicrosoft = async () => {
                         </Link>
                     </div>
                 </form>
-                <div className="flex flex-col gap-4 mb-8">
-             <button
-    onClick={signInWithGoogle}
-    className="border border-[#C7CBFF] py-4 rounded-xl font-semibold hover:bg-[#EEF0FF]"
-  >
-    Continue with Google
-  </button>
-
-  <button
-    onClick={signInWithMicrosoft}
-    className="border border-[#C7CBFF] py-4 rounded-xl font-semibold hover:bg-[#EEF0FF]"
-  >
-    Continue with Microsoft
-  </button>
-</div>
             </div>
-   
-
         </div>
     );
 }
 
 export default SignUp;
-
-
