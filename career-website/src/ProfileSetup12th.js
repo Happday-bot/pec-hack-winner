@@ -4,29 +4,73 @@ import { supabase } from "./supabase";
 /* ================= CONSTANTS ================= */
 
 const allSubjects = [
-  "English", "Physics", "Chemistry", "Mathematics", "Biology",
-  "Computer Science", "Business Studies", "Accountancy", "Economics"
+  "English",
+  "Physics",
+  "Chemistry",
+  "Mathematics",
+  "Biology",
+  "Computer Science",
+  "Business Studies",
+  "Accountancy",
+  "Economics",
 ];
 
 const indianStates = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
-  "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
-  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
-  "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Jammu & Kashmir",
-  "Ladakh","Puducherry", "Chandigarh"
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Delhi",
+  "Jammu & Kashmir",
+  "Ladakh",
+  "Puducherry",
+  "Chandigarh",
 ];
-
 
 const streamOptions = ["PCMB", "PCM", "PCB", "Commerce", "Arts"];
 
 const interestSubjects = [
-  "Science", "Mathematics", "ComputerScience", "SocialScience", "Languages", "Arts", "Commerce"
+  "Science",
+  "Mathematics",
+  "ComputerScience",
+  "SocialScience",
+  "Languages",
+  "Arts",
+  "Commerce",
 ];
 
 const ambitionOptions = [
-  "Doctor", "Engineer", "Scientist", "Lawyer", "Entrepreneur", "Designer", "Others"
+  "Doctor",
+  "Engineer",
+  "Scientist",
+  "Lawyer",
+  "Entrepreneur",
+  "Designer",
+  "Others",
 ];
 
 const emptyForm = {
@@ -38,7 +82,7 @@ const emptyForm = {
   otherAmbition: "",
   neetScore: "",
   jeeScore: "",
-  preferredLocations: ["", "", "", "", ""] // restored location array
+  preferredLocations: ["", "", "", "", ""],
 };
 
 /* ================= COMPONENT ================= */
@@ -57,11 +101,16 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
       compulsoryLanguage: initialData.Language || "",
       stream: initialData.stream || "",
       interest: initialData.interest || "",
-      ambition: ambitionOptions.includes(initialData.ambition) ? initialData.ambition : "Others",
-      otherAmbition: !ambitionOptions.includes(initialData.ambition) ? initialData.ambition : "",
+      ambition: ambitionOptions.includes(initialData.ambition)
+        ? initialData.ambition
+        : "Others",
+      otherAmbition: !ambitionOptions.includes(initialData.ambition)
+        ? initialData.ambition
+        : "",
       neetScore: initialData.neet_score || "",
       jeeScore: initialData.jee_score || "",
-      preferredLocations: initialData.preferred_locations || ["", "", "", "", ""]
+      preferredLocations:
+        initialData.preferred_locations || ["", "", "", "", ""],
     });
 
     setSelectedSubjects(initialData.subjects || []);
@@ -88,7 +137,6 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
     setSelectedSubjects(updated);
   };
 
-  // Restored: Handle changes for the 5 location inputs
   const handleLocationChange = (index, value) => {
     setForm((prev) => {
       const updated = [...prev.preferredLocations];
@@ -102,8 +150,13 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
   const handleFinish = async (e) => {
     e.preventDefault();
 
-    // Basic Validation
-    if (!form.medium || !form.compulsoryLanguage || !form.stream || !form.interest || !form.ambition) {
+    if (
+      !form.medium ||
+      !form.compulsoryLanguage ||
+      !form.interest ||
+      !form.ambition
+      // stream is no longer required in UI
+    ) {
       alert("Please fill all required fields");
       return;
     }
@@ -113,8 +166,9 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
       return;
     }
 
-    // Ensure at least 3 locations are filled (optional rule, you can remove if needed)
-    const filledLocations = form.preferredLocations.filter((l) => l.trim() !== "");
+    const filledLocations = form.preferredLocations.filter(
+      (l) => l.trim() !== ""
+    );
     if (filledLocations.length < 3) {
       alert("Please enter at least 3 preferred locations");
       return;
@@ -124,13 +178,14 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
       email: email,
       medium: form.medium,
       Language: form.compulsoryLanguage,
-      stream: form.stream,
+      stream: form.stream, // kept for DB compatibility
       interest: form.interest,
-      subjects: selectedSubjects, 
-      ambition: form.ambition === "Others" ? form.otherAmbition : form.ambition,
+      subjects: selectedSubjects,
+      ambition:
+        form.ambition === "Others" ? form.otherAmbition : form.ambition,
       neet_score: form.neetScore ? parseFloat(form.neetScore) : null,
       jee_score: form.jeeScore ? parseFloat(form.jeeScore) : null,
-      preferred_locations: form.preferredLocations // Saving full array [city1, city2...]
+      preferred_locations: form.preferredLocations,
     };
 
     console.log("Saving data to 12th_profile_data:", finalData);
@@ -155,7 +210,9 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
       onSubmit={handleFinish}
       className="max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-8 space-y-6"
     >
-      <h2 className="text-2xl font-bold text-gray-800">Profile Setup – 12th</h2>
+      <h2 className="text-2xl font-bold text-gray-800">
+        Profile Setup – 12th
+      </h2>
 
       {/* Medium & Language */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -182,19 +239,6 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
           <option>Urdu</option>
         </select>
       </div>
-
-      {/* Stream Selection */}
-      <select
-        name="stream"
-        value={form.stream}
-        onChange={handleChange}
-        className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-      >
-        <option value="">Stream *</option>
-        {streamOptions.map((s) => (
-          <option key={s}>{s}</option>
-        ))}
-      </select>
 
       {/* Subjects Selection */}
       <div>
@@ -223,7 +267,9 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
           <p className="text-sm font-medium text-gray-500">Enter Marks:</p>
           {selectedSubjects.map((s, i) => (
             <div key={i} className="flex items-center gap-4">
-              <span className="w-1/2 text-sm font-bold text-gray-700">{s.name}</span>
+              <span className="w-1/2 text-sm font-bold text-gray-700">
+                {s.name}
+              </span>
               <input
                 type="number"
                 value={s.marks}
@@ -274,56 +320,60 @@ export default function ProfileSetup12th({ onComplete, initialData, email }) {
         />
       )}
 
-      {/* Restored Preferred Locations */}
+      {/* Preferred Locations */}
       <div>
-  <h3 className="font-semibold mb-2">Preferred Locations (Top 5 States)</h3>
-  <div className="space-y-3">
-    {form.preferredLocations.map((loc, index) => (
-      <select
-        key={index}
-        value={loc}
-        onChange={(e) => handleLocationChange(index, e.target.value)}
-        className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-      >
-        <option value="">Select State {index + 1}</option>
-        {indianStates.map((state) => (
-          <option key={state} value={state}>{state}</option>
-        ))}
-      </select>
-    ))}
-  </div>
-</div>
+        <h3 className="font-semibold mb-2">
+          Preferred Locations (Top 5 States)
+        </h3>
+        <div className="space-y-3">
+          {form.preferredLocations.map((loc, index) => (
+            <select
+              key={index}
+              value={loc}
+              onChange={(e) => handleLocationChange(index, e.target.value)}
+              className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="">Select State {index + 1}</option>
+              {indianStates.map((state) => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
+          ))}
+        </div>
+      </div>
 
-      {/* NEET & JEE Scores (All Streams) */}
-<div className="space-y-4">
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      NEET Score
-    </label>
-    <input
-      type="number"
-      name="neetScore"
-      value={form.neetScore}
-      onChange={handleChange}
-      placeholder="If applicable"
-      className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-    />
-  </div>
+      {/* NEET & JEE Scores */}
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            NEET Score
+          </label>
+          <input
+            type="number"
+            name="neetScore"
+            value={form.neetScore}
+            onChange={handleChange}
+            placeholder="If applicable"
+            className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+        </div>
 
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      JEE Score
-    </label>
-    <input
-      type="number"
-      name="jeeScore"
-      value={form.jeeScore}
-      onChange={handleChange}
-      placeholder="If applicable"
-      className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-    />
-  </div>
-</div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            JEE Score
+          </label>
+          <input
+            type="number"
+            name="jeeScore"
+            value={form.jeeScore}
+            onChange={handleChange}
+            placeholder="If applicable"
+            className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+        </div>
+      </div>
 
       <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition shadow-md">
         Save & Finish
