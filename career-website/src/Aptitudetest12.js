@@ -293,7 +293,7 @@
  //export default AptitudeTest;
 
 
- /*
+ 
  import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleGenAI } from "@google/genai";
@@ -304,7 +304,7 @@ const AptitudeTest = () => {
 
  
   const ai = new GoogleGenAI({ 
-    apiKey: "dummy" 
+    apiKey: "AIzaSyBC3QTI-v-HILkaFZBS5Gf0VaFrzMNboLE" 
   });
 
   const [questions, setQuestions] = useState([]);
@@ -370,7 +370,7 @@ const AptitudeTest = () => {
       return;
     }
 
-    const payload = {
+    /*const payload = {
       prompt_id: "CAREER_GUIDANCE_V4_DOMAIN_FILTERED",
       prompt: `You are a professional career guidance analyzer.
 
@@ -396,6 +396,67 @@ Return ONLY valid JSON. No markdown.
         student_grade: sessionStorage.getItem("qualification"),
         current_stream: sessionStorage.getItem("stream") || "N/A",
         answers,
+      },
+    };*/
+
+    const payload = {
+      prompt_id: "CAREER_GUIDANCE_V5_OPEN_RESPONSE",
+      prompt: `
+You are a professional career aptitude analyst.
+
+Analyze the student's SHORT ANSWER responses semantically.
+Do NOT invent data. Use ONLY the provided responses.
+
+Cluster each answer into one or more of the following aptitude domains:
+A: Creative / Design / Expression
+B: Technical / Mechanical / Logical / Structured
+C: Commerce / Business / Finance / Management
+D: Biological / Medical / Research / Life Sciences
+
+Steps:
+1. Semantically evaluate all 10 responses.
+2. Assign each response to one or more clusters (A/B/C/D).
+3. Tally total influence per cluster.
+4. Identify the dominant cluster.
+5. Based on student grade:
+   - If 12th → select EXACTLY 12 outcomes without repetition
+   - If 10th → select EXACTLY 4 outcomes without repetition
+
+IMPORTANT:
+- DO NOT modify or invent outcome lists.
+- Respect stream constraints strictly.
+- Output MUST be valid JSON ONLY.
+
+12th-grade outcomes:
+['mech','civil','comp','aids','aiml','it','robotics','biomedical','biotechnology','cardiologist','mbbs','bba','bcom','chartered_accountant','law','fashion_design','animation']
+
+10th-grade outcomes:
+['comp','Bio','Arts','Commerce','cultural sciences']
+
+OUTPUT FORMAT (MANDATORY):
+
+{
+  "semantic_cluster_scores": { "A": number, "B": number, "C": number, "D": number },
+  "dominant_cluster_analysis": {
+    "type": "A | B | C | D",
+    "description": "string"
+  },
+  "final_outcome_recommendation": [
+    {
+      "type": "any combination",
+      "field": "string",
+      "description": "string"
+    }
+  ],
+  "justification": "string"
+}
+
+If analysis is not possible, return {}.
+      `,
+      student_data: {
+        student_grade: sessionStorage.getItem("qualification"),
+        current_stream: sessionStorage.getItem("stream") || "N/A",
+        responses: answers,
       },
     };
 
@@ -544,11 +605,11 @@ Return ONLY valid JSON. No markdown.
   );
 };
 
-export default AptitudeTest;*/
+export default AptitudeTest;
 
 
 
-import React, { useState } from "react";
+/*import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleGenAI } from "@google/genai";
 import { supabase } from "./supabase";
@@ -557,7 +618,7 @@ const AptitudeTest = () => {
   const navigate = useNavigate();
 
   // 🔐 Gemini API (COMMENT BEFORE FINAL COMMIT)
-  const ai = new GoogleGenAI({ apiKey: "AIzaSyBkdWhgoXAyP-oLwbV2Bwpq957wa5EL-LQ" });
+  const ai = new GoogleGenAI({ apiKey: "AIzaSyBC3QTI-v-HILkaFZBS5Gf0VaFrzMNboLE" });
 
   const questions = [
     "What kind of problems do you enjoy solving the most?",
@@ -791,4 +852,4 @@ If analysis is not possible, return {}.
   );
 };
 
-export default AptitudeTest;
+export default AptitudeTest;*/
