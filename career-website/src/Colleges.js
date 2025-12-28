@@ -346,7 +346,7 @@ const matchesSearch =
             <Search className="absolute left-4 top-3 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by name or district..."
+              placeholder="Search by name or district or state..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"

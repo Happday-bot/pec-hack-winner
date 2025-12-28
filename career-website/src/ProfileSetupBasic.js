@@ -1,4 +1,4 @@
-/*import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
 
@@ -209,7 +209,8 @@ const Select = ({ label, options, ...props }) => (
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   </div>
-);*/
+);
+/*
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
@@ -268,7 +269,6 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
 
   if (!email) return alert("Session expired. Please login again.");
 
-  /* ---------- 1️⃣ Save COMMON profile ---------- */
   const profilePayload = {
     email,
     fullname: `${form.firstName} ${form.middleName ? form.middleName + " " : ""}${form.lastName}`,
@@ -293,7 +293,6 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
     return alert("Failed to save profile");
   }
 
-  /* ---------- 2️⃣ Save qualification-specific data ---------- */
 
   const preferredLocations = form.preferredLocations.filter(Boolean);
 
@@ -335,7 +334,6 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
     }
   }
 
-  /* ---------- 3️⃣ Navigation ---------- */
   sessionStorage.setItem("qualification", form.qualification);
   navigate("/aptitude-landing", {
     state: { qualification: form.qualification }
@@ -400,7 +398,6 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
 
         
 
-        {/* Preferred Locations */}
         <div>
           <h3 className="text-[#444EE7] font-semibold mb-3">
             Preferred Locations (Top 5 States)
@@ -423,8 +420,7 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
           </div>
         </div>
 
-        {/* NEET & JEE Scores */}
-        {/* NEET & JEE Scores – Only for 12th */}
+     
 {form.qualification === "12" && (
   <>
     <Input
@@ -460,7 +456,6 @@ export default function ProfileSetupBasic({ initialData, Email = null }) {
   );
 }
 
-/* ---------- REUSABLE COMPONENTS ---------- */
 
 const Input = ({ label, ...props }) => (
   <div className="flex flex-col">
@@ -487,3 +482,4 @@ const Select = ({ label, options, ...props }) => (
     </select>
   </div>
 );
+*/

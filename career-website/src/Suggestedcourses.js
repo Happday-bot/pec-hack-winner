@@ -266,7 +266,8 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabase";
-import { Search, Sparkles } from "lucide-react";
+import { Search, Target, GraduationCap, Sparkles } from "lucide-react";
+
 
 export default function SuggestedCourses() {
   const heroRef = useRef(null);
@@ -467,6 +468,7 @@ export default function SuggestedCourses() {
                     : "text-gray-500 hover:bg-gray-50"
                 }`}
               >
+                <Target className="inline w-4 h-4 mr-2" />
                 My Interests
               </button>
               <button
@@ -476,7 +478,8 @@ export default function SuggestedCourses() {
                     ? "bg-indigo-600 text-white shadow-sm"
                     : "text-gray-500 hover:bg-gray-50"
                 }`}
-              >
+              > 
+              <GraduationCap className="inline w-4 h-4 mr-2" />
                 All Eligible
               </button>
             </div>
