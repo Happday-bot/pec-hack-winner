@@ -260,16 +260,14 @@
 //     </button>
 //   </div>
 // );
-
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import ProfileSetupBasic from "./ProfileSetupBasic";
-import ProfileSetup10th from "./ProfileSetup10th";
-import ProfileSetup12th from "./ProfileSetup12th";
+// import ProfileSetup10th from "./ProfileSetup10th";
+// import ProfileSetup12th from "./ProfileSetup12th";
 import { supabase } from "./supabase";
 
 export default function ProfileSettings() {
-  const [EMAIL, setEmail] = useState(
+  const [EMAIL] = useState(
     () =>
       sessionStorage.getItem("userEmail") ||
       sessionStorage.getItem("signUpEmail")
@@ -278,47 +276,29 @@ export default function ProfileSettings() {
   const isBootstrappingRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
-  const [editSection, setEditSection] = useState(null);
-
-  const [qualification, setQualification] = useState(null);
+  const [editSection, setEditSection] = useState("basic"); // 👈 open basic by default
 
   const [basicDone, setBasicDone] = useState(false);
-  const [tenthExists, setTenthExists] = useState(false);
-  const [twelfthExists, setTwelfthExists] = useState(false);
-
   const [basicProfile, setBasicProfile] = useState(null);
-  const [tenthData, setTenthData] = useState(null);
-  const [twelfthData, setTwelfthData] = useState(null);
 
-  // Reset all state when user changes
+  /* ---------------- RESET ---------------- */
   const resetStateForUser = () => {
     setLoading(true);
-
     setBasicDone(false);
-    setTenthExists(false);
-    setTwelfthExists(false);
-
     setBasicProfile(null);
-    setTenthData(null);
-    setTwelfthData(null);
-
-    setQualification(null);
-    setEditSection(null);
+    setEditSection("basic");
   };
 
-  // --------- FETCHERS ---------
+  /* ---------------- FETCH BASIC PROFILE ---------------- */
   const fetchBasicProfile = useCallback(async () => {
     if (!EMAIL) return;
 
     try {
-      console.log("Fetching basic profile for EMAIL:", EMAIL);
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("email", EMAIL)
         .maybeSingle();
-
-      console.log("Fetched basic profile data:", data, "Error:", error);
 
       if (error) {
         console.error("Error fetching basic profile:", error);
@@ -338,80 +318,29 @@ export default function ProfileSettings() {
           qualification: data.qualification,
           stream: data.stream || null,
         });
-
-        setQualification(String(data.qualification));
         setBasicDone(true);
       }
     } catch (err) {
-      console.error("Unexpected error fetching basic profile:", err);
+      console.error("Unexpected error:", err);
     }
   }, [EMAIL]);
 
-  const fetch10thProfile = useCallback(async () => {
-    if (!EMAIL) return;
-
-    try {
-      const { data, error } = await supabase
-        .from("10th_profile_data")
-        .select("*")
-        .eq("email", EMAIL)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Error fetching 10th profile:", error);
-        return;
-      }
-
-      setTenthExists(!!data);
-      setTenthData(data || null);
-    } catch (err) {
-      console.error("Unexpected error fetching 10th profile:", err);
-    }
-  }, [EMAIL]);
-
-  const fetch12thProfile = useCallback(async () => {
-    if (!EMAIL) return;
-
-    try {
-      const { data, error } = await supabase
-        .from("12th_profile_data")
-        .select("*")
-        .eq("email", EMAIL)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Error fetching 12th profile:", error);
-        return;
-      }
-
-      setTwelfthExists(!!data);
-      setTwelfthData(data || null);
-    } catch (err) {
-      console.error("Unexpected error fetching 12th profile:", err);
-    }
-  }, [EMAIL]);
-
-  // --------- BOOTSTRAP ---------
+  /* ---------------- BOOTSTRAP ---------------- */
   useEffect(() => {
     if (!EMAIL) return;
 
     const bootstrap = async () => {
       resetStateForUser();
       isBootstrappingRef.current = true;
-      setLoading(true);
 
-      await Promise.all([
-        fetchBasicProfile(),
-        fetch10thProfile(),
-        fetch12thProfile(),
-      ]);
+      await fetchBasicProfile();
 
       setLoading(false);
       isBootstrappingRef.current = false;
     };
 
     bootstrap();
-  }, [EMAIL, fetchBasicProfile, fetch10thProfile, fetch12thProfile]);
+  }, [EMAIL, fetchBasicProfile]);
 
   if (loading) {
     return (
@@ -423,8 +352,9 @@ export default function ProfileSettings() {
 
   return (
     <div className="max-w-5xl mx-auto mt-10">
-      <h2 className="text-xl font-bold mb-4">Profile Setup Status</h2>
+      <h2 className="text-xl font-bold mb-4">Profile Setup</h2>
 
+      {/* -------- BASIC PROFILE -------- */}
       <Section
         title="Profile Setup – Basic"
         done={basicDone}
@@ -432,6 +362,7 @@ export default function ProfileSettings() {
           setEditSection(editSection === "basic" ? null : "basic")
         }
       />
+
       {editSection === "basic" && (
         <ProfileSetupBasic
           initialData={basicProfile}
@@ -443,54 +374,32 @@ export default function ProfileSettings() {
         />
       )}
 
-      {qualification === "10" && (
-        <>
-          <Section
-            title="Profile Setup – 10th"
-            done={tenthExists}
-            onClick={() =>
-              setEditSection(editSection === "10th" ? null : "10th")
-            }
-          />
-          {editSection === "10th" && (
-            <ProfileSetup10th
-              initialData={tenthData}
-              email={EMAIL}
-              onComplete={async () => {
-                await fetch10thProfile();
-                setEditSection(null);
-              }}
-            />
-          )}
-        </>
-      )}
+      {/* -------- 10TH PROFILE (COMMENTED) -------- */}
+      {/*
+      <Section
+        title="Profile Setup – 10th"
+        done={tenthExists}
+        onClick={() =>
+          setEditSection(editSection === "10th" ? null : "10th")
+        }
+      />
+      */}
 
-      {qualification === "12" && (
-        <>
-          <Section
-            title="Profile Setup – 12th"
-            done={twelfthExists}
-            onClick={() =>
-              setEditSection(editSection === "12th" ? null : "12th")
-            }
-          />
-          {editSection === "12th" && (
-            <ProfileSetup12th
-              initialData={twelfthData}
-              email={EMAIL}
-              onComplete={async () => {
-                await fetch12thProfile();
-                setEditSection(null);
-              }}
-            />
-          )}
-        </>
-      )}
+      {/* -------- 12TH PROFILE (COMMENTED) -------- */}
+      {/*
+      <Section
+        title="Profile Setup – 12th"
+        done={twelfthExists}
+        onClick={() =>
+          setEditSection(editSection === "12th" ? null : "12th")
+        }
+      />
+      */}
     </div>
   );
 }
 
-/* --------------------- SECTION COMPONENT --------------------- */
+/* ---------------- SECTION COMPONENT ---------------- */
 const Section = ({ title, done, onClick }) => (
   <div className="flex justify-between items-center mb-3">
     <span>{done ? "✔" : "🔒"} {title}</span>

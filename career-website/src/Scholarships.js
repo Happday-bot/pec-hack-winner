@@ -267,15 +267,15 @@ export default function Scholarships() {
         {/* HERO */}
         <header
           ref={heroRef}
-          className="relative text-center py-20 bg-gradient-to-r from-[#5c3cf0] to-[#7a5cff] text-white shadow-lg overflow-hidden rounded-b-3xl"
+          className="bg-indigo-600 text-white py-20 px-6 rounded-b-[3rem] shadow-xl text-center relative overflow-hidden"
         >
            {/* Floating shapes */}
         <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
         <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
         <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
         <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
-          <div className="relative z-10 max-w-3xl mx-auto px-4">
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-3 flex items-center justify-center gap-3">
+          <div className="relative z-10 max-w-4xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-4 drop-shadow-lg flex items-center justify-center gap-3 flex-wrap">
               <GraduationCap className="w-12 h-12 text-yellow-300" /> Scholarships
             </h1>
             
@@ -357,22 +357,21 @@ export default function Scholarships() {
               return (
                 <div
                   key={s.id}
-                  className={`bg-white rounded-2xl border ${
-                    isPriority
-                      ? "border-blue-400 ring-2 ring-blue-50"
-                      : "border-gray-100"
-                  } p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full group relative`}
+                  className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full group relative"
                 >
                   {/* BADGE */}
-                  {s.region && s.region !== "India" && (
-                    <div
-                      className={`absolute top-0 right-0 ${
-                        isPriority ? "bg-blue-600" : "bg-gray-600"
-                      } text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl flex items-center gap-1 shadow-sm z-10`}
-                    >
-                      <MapPin className="w-3 h-3" /> {s.region}
-                    </div>
-                  )}
+                 { s.region && s.region !== "India" && (
+  <div
+    className="absolute top-0 right-0
+               bg-indigo-600
+               text-white text-[10px] font-bold px-3 py-1
+               rounded-bl-xl rounded-tr-xl
+               flex items-center gap-1 shadow-sm z-10"
+  >
+    <MapPin className="w-3 h-3" /> {s.region}
+  </div>
+)}
+
 
                   <div className="flex justify-between items-start mb-4">
                     <div className="p-3 bg-blue-50 rounded-xl text-blue-600 group-hover:scale-110 transition">
@@ -410,7 +409,7 @@ export default function Scholarships() {
 
                   <button
                     onClick={() => setSelectedSch(s)}
-                    className="w-full py-3 rounded-xl bg-gray-900 text-white font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition flex items-center justify-center gap-2"
                   >
                     View Details <ChevronRight className="w-4 h-4" />
                   </button>
@@ -444,7 +443,7 @@ export default function Scholarships() {
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setSelectedSch(null)}
             ></div>
-            <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl animate-fade-in-up">
+            <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl animate-fade-in-up custom-scrollbar">
               <div className="sticky top-0 bg-white border-b z-20">
                 <div className="bg-gradient-to-r from-[#5c3cf0] to-[#7a5cff] p-6 rounded-t-3xl text-white flex justify-between items-start">
                   <div>
@@ -562,7 +561,7 @@ export default function Scholarships() {
                     href={selectedSch.link}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-gray-900 text-white font-bold hover:bg-gray-800 transition active:scale-95 shadow-xl shadow-gray-200"
+                    className="flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition active:scale-95 shadow-xl shadow-gray-200"
                   >
                     Apply on Official Portal{" "}
                     <ExternalLink className="w-5 h-5" />

@@ -59,6 +59,8 @@ export default function Colleges() {
   const [search, setSearch] = useState("");
   const [selectedDomain, setSelectedDomain] = useState("");
   const [selectedMedium, setSelectedMedium] = useState("");
+  const [selectedCollegeType, setSelectedCollegeType] = useState("");
+
 
   // User Data
   const [userPreferences, setUserPreferences] = useState([]);
@@ -218,48 +220,64 @@ export default function Colleges() {
     4. ANIMATION
     ============================== */
   useEffect(() => {
-    if (heroRef.current) {
-      gsap.fromTo(
-        heroRef.current,
-        { opacity: 0, y: -50 },
-        { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }
-      );
-    }
+    // Animation removed for cleaner experience
   }, [loading]);
 
   /* ===============================
     5. FILTERING (NO LOCATION LOGIC)
     ============================== */
   const filteredColleges = colleges.filter((college) => {
-    const matchesSearch =
-      college.name.toLowerCase().includes(search.toLowerCase()) ||
-      college.district?.toLowerCase().includes(search.toLowerCase());
+  const searchValue = search.trim().toLowerCase();
+const searchNumber = Number(searchValue);
 
-    const collegeStream = Array.isArray(college.stream)
-      ? college.stream[0]
-      : college.stream;
+const matchesSearch =
+  !searchValue ||
+  college.name?.toLowerCase().includes(searchValue) ||
+  college.district?.toLowerCase().includes(searchValue) ||
+  college.state?.toLowerCase().includes(searchValue) ||
+  (
+    !isNaN(searchNumber) &&
+    college.distanceKm !== Infinity &&
+    college.distanceKm <= searchNumber
+  );
 
-    const matchesDomain = selectedDomain
-      ? collegeStream === selectedDomain
-      : true;
 
-    const matchesMedium = selectedMedium
-      ? college.medium === selectedMedium
-      : true;
+  const collegeStream = Array.isArray(college.stream)
+    ? college.stream[0]
+    : college.stream;
 
-    let isEligible = true;
-    if (userStream) {
-      const eligibleDomains = getEligibleDomains(userStream);
-      if (
-        eligibleDomains.length > 0 &&
-        !eligibleDomains.includes(collegeStream)
-      ) {
-        isEligible = false;
-      }
+  const matchesDomain = selectedDomain
+    ? collegeStream === selectedDomain
+    : true;
+
+  const matchesMedium = selectedMedium
+    ? college.medium === selectedMedium
+    : true;
+
+  // 🔹 NEW: Government / Private filter
+  const matchesType = selectedCollegeType
+    ? (college.type || "").toLowerCase().includes(selectedCollegeType)
+    : true;
+
+  let isEligible = true;
+  if (userStream) {
+    const eligibleDomains = getEligibleDomains(userStream);
+    if (
+      eligibleDomains.length > 0 &&
+      !eligibleDomains.includes(collegeStream)
+    ) {
+      isEligible = false;
     }
+  }
 
-    return matchesSearch && matchesDomain && matchesMedium && isEligible;
-  });
+  return (
+    matchesSearch &&
+    matchesDomain &&
+    matchesMedium &&
+    matchesType &&   // 👈 added here
+    isEligible
+  );
+});
 
   const availableDomains = [
     ...new Set(
@@ -282,12 +300,7 @@ export default function Colleges() {
   /* ===============================
     6. RENDER
     ============================== */
-  if (checking)
-    return (
-      <div className="min-h-screen flex items-center justify-center text-indigo-600 font-bold">
-        Checking access...
-      </div>
-    );
+  if (checking) return null;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -313,12 +326,12 @@ export default function Colleges() {
 
       {/* SIMPLIFIED HERO */}
       <section ref={heroRef} className="bg-indigo-600 text-white py-20 px-6 rounded-b-[3rem] shadow-xl text-center relative overflow-hidden">
-        {/* Floating shapes */}
-        <div className="floating-shape absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
-        <div className="floating-shape absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
-        <div className="floating-shape absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
-        <div className="floating-shape absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
-        <Sparkles className="absolute top-10 right-10 w-12 h-12 text-white/20 animate-spin-slow" />
+        {/* Floating shapes - No animation */}
+        <div className="absolute -top-12 -left-12 w-32 h-32 bg-white/10 rounded-full"></div>
+        <div className="absolute -bottom-16 -right-12 w-48 h-48 bg-white/20 rounded-full"></div>
+        <div className="absolute top-12 right-32 w-20 h-20 bg-white/15 rounded-full"></div>
+        <div className="absolute top-8 left-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
+        <Sparkles className="absolute top-10 right-10 w-12 h-12 text-white/20" />
         <div className="relative z-10 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-8 flex items-center justify-center gap-3">
             Suggested Colleges <GraduationCap className="w-10 h-10 md:w-12 md:h-12 text-yellow-300" />
@@ -339,6 +352,16 @@ export default function Colleges() {
               className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
+          <select
+  className="w-full md:w-48 p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+  value={selectedCollegeType}
+  onChange={(e) => setSelectedCollegeType(e.target.value)}
+>
+  <option value="" classname="text-gray-500">All Types</option>
+  <option value="government">Government</option>
+  <option value="private">Private</option>
+</select>
+
 
           <select
             className="w-full md:w-48 p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
@@ -349,14 +372,14 @@ export default function Colleges() {
             {validDropdownDomains.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
 
-          <select
+         {/*} <select
             className="w-full md:w-48 p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
             value={selectedMedium}
             onChange={(e) => setSelectedMedium(e.target.value)}
           >
             <option value="">All Mediums</option>
             {uniqueMediums.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
+          </select>*/}
         </div>
       </div>
 
@@ -413,17 +436,20 @@ export default function Colleges() {
         )}
       </div>
 
-      {/* ENHANCED MODAL WITH ALL NEW FIELDS */}
+      {/* ENHANCED MODAL WITH ALL NEW FIELDS - FIXED */}
       {selectedCollege && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedCollege(null)}></div>
-          <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl animate-fade-in-up">
-            <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center z-20">
+          <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[85vh] relative z-10 shadow-2xl flex flex-col overflow-hidden">
+            {/* Fixed Header */}
+            <div className="bg-white p-6 border-b flex justify-between items-center flex-shrink-0">
               <h2 className="text-2xl font-bold text-gray-800 pr-8">{selectedCollege.name}</h2>
               <button onClick={() => setSelectedCollege(null)} className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full text-gray-600 transition">✕</button>
             </div>
 
-            <div className="p-6 space-y-6">
+            {/* Scrollable Content - Hidden Scrollbar */}
+            <div className="overflow-y-auto flex-1 scrollbar-hidden">
+              <div className="p-6 space-y-6">
               {/* BASIC INFO GRID */}
               <div className="bg-indigo-50 p-6 rounded-2xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="text-center"><span className="block text-gray-500 font-bold uppercase text-xs mb-1">Rank</span><span className="font-semibold text-xl text-gray-800">{selectedCollege.rank || "N/A"}</span></div>
@@ -619,6 +645,7 @@ export default function Colleges() {
                   )}
                 </div>
               )}
+              </div>
             </div>
           </div>
         </div>

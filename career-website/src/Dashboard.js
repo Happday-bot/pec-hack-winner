@@ -57,7 +57,7 @@ const Dashboard = () => {
           duration: 1,
           delay: i * 0.2,
           ease: "power3.out",
-          immediateRender: false, // ensures ScrollTrigger handles initial render
+          immediateRender: false,
           scrollTrigger: {
             trigger: el,
             start: "top 80%",
